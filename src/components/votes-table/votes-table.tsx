@@ -1,11 +1,12 @@
 import * as React from "react";
-import {Button, Segment, SegmentGroup, List} from "semantic-ui-react";
+import {Button, Segment, SegmentGroup, Message, Icon} from "semantic-ui-react";
 
 import "./votes-table.scss";
 import {IEstimation} from "../../api/interfaces";
 import {ApiService} from "../../api";
 import CardReveal from "../card-reveal/card-reveal";
 import EstimationChart from "../estimation-chart/estimation-chart";
+import EstimationStatistics from "../est-statistics";
 
 export interface IVotesTableProps {
   estimation: IEstimation;
@@ -73,72 +74,39 @@ export default class VotesTable extends React.Component<
               />
             </Button.Group>
           </Segment>
-          {!this.props.estimation.isActive && (
-            <Segment.Group horizontal>
-              <EstimationChart
-                estimation={this.props.estimation}
-              ></EstimationChart>
-              <Segment>
-                <List divided relaxed>
-                  <List.Item>
-                    <List.Icon
-                      name="github"
-                      size="large"
-                      verticalAlign="middle"
-                    />
-                    <List.Content>
-                      <List.Header as="a">Semantic-Org/Semantic-UI</List.Header>
-                      <List.Description as="a">
-                        Updated 10 mins ago
-                      </List.Description>
-                    </List.Content>
-                  </List.Item>
-                  <List.Item>
-                    <List.Icon
-                      name="github"
-                      size="large"
-                      verticalAlign="middle"
-                    />
-                    <List.Content>
-                      <List.Header as="a">
-                        Semantic-Org/Semantic-UI-Docs
-                      </List.Header>
-                      <List.Description as="a">
-                        Updated 22 mins ago
-                      </List.Description>
-                    </List.Content>
-                  </List.Item>
-                  <List.Item>
-                    <List.Icon
-                      name="github"
-                      size="large"
-                      verticalAlign="middle"
-                    />
-                    <List.Content>
-                      <List.Header as="a">
-                        Semantic-Org/Semantic-UI-Meteor
-                      </List.Header>
-                      <List.Description as="a">
-                        Updated 34 mins ago
-                      </List.Description>
-                    </List.Content>
-                  </List.Item>
-                </List>
-              </Segment>
-            </Segment.Group>
+          {!this.props.estimation.isActive &&
+            !!Object.keys(this.props.estimation.votes ?? {}).length && (
+              <Segment.Group horizontal>
+                <Segment>
+                  <EstimationStatistics
+                    estimation={this.props.estimation}
+                  ></EstimationStatistics>
+                </Segment>
+                <EstimationChart
+                  estimation={this.props.estimation}
+                ></EstimationChart>
+              </Segment.Group>
+            )}
+          {!Object.keys(this.props.estimation.votes ?? {}).length && (
+            <Message warning attached="bottom">
+              <Icon name="warning" />
+              There are no votes for this story.
+            </Message>
           )}
-          <Segment>
-            <div className="votes-table__cards">
-              {Object.keys(this.props.estimation.votes).map((voteKey) => {
-                return (
-                  <CardReveal
-                    vote={this.props.estimation.votes[voteKey]}
-                    shouldHide={this.props.estimation.isActive}
-                  ></CardReveal>
-                );
-              })}
-            </div>
-          </Segment>
+          {!!Object.keys(this.props.estimation.votes ?? {}).length && (
+            <Segment>
+              <div className="votes-table__cards">
+                {Object.keys(this.props.estimation.votes).map((voteKey) => {
+                  return (
+                    <CardReveal
+                      vote={this.props.estimation.votes[voteKey]}
+                      shouldHide={this.props.estimation.isActive}
+                    ></CardReveal>
+                  );
+                })}
+              </div>
+            </Segment>
+          )}
         </SegmentGroup>
       </div>
     );

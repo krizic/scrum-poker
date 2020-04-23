@@ -54,22 +54,22 @@ export default class EstimationChart extends React.Component<
         <Segment className="chart-container">
           <ResponsivePie
             data={this.chartData}
-            margin={{top: 40, right: 80, bottom: 80, left: 80}}
-            startAngle={0}
-            endAngle={90}
+            margin={{top: 20, right: 0, bottom: 0, left: 80}}
+            startAngle={-90}
+            endAngle={0}
             sortByValue={true}
             padAngle={1}
             cornerRadius={5}
             radialLabelsSkipAngle={10}
             radialLabelsTextXOffset={6}
-            radialLabelsTextColor="#333333"
+            radialLabelsTextColor="#000000"
             radialLabelsLinkOffset={0}
             radialLabelsLinkDiagonalLength={16}
             radialLabelsLinkHorizontalLength={24}
             radialLabelsLinkStrokeWidth={1}
             radialLabelsLinkColor={{from: "color"}}
             slicesLabelsSkipAngle={10}
-            slicesLabelsTextColor="#333333"
+            slicesLabelsTextColor="#000000"
             // animate={true}
             motionStiffness={90}
             // motionDamping={15}

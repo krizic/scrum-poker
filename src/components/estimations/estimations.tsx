@@ -5,7 +5,6 @@ import {IEstimation} from "../../api/interfaces";
 import VotesTable from "../votes-table/votes-table";
 
 import "./style.scss";
-import EstimationChart from "../estimation-chart/estimation-chart";
 
 export interface IEstimationsProps {
   estimations: {[key: string]: IEstimation};
@@ -45,7 +44,7 @@ export default class Estimations extends React.Component<
             : this.props.estimations[estimationKey].name,
           render: () => (
             <Tab.Pane className="tab-container">
-              <VotesTable
+              <VotesTable key={estimationKey}
                 documentRef={{_rev: this.props.rev, _id: this.props.id}}
                 estimation={this.props.estimations[estimationKey]}
               ></VotesTable>
@@ -58,7 +57,7 @@ export default class Estimations extends React.Component<
   public render() {
     return (
       <Tab
-        menu={{pointing: true, fluid: true, vertical: true}}
+        menu={{pointing: true, renderActiveOnly:false, fluid: true, vertical: true}}
         panes={this.mapEstimationsToPanes()}
       />
     );

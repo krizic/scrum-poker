@@ -128,14 +128,16 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
                 </Form.Field>
                 <Form.Field>
                   <textarea
+                    rows={2}
                     name="estimation_description"
                     placeholder="Story Description"
                     onChange={this.onEstimationFormInputChange}
                     value={this.state.estimationForm?.estimation_description}
                   ></textarea>
                 </Form.Field>
-                <Button floated="right" type="submit">
-                  New
+                <Button floated="left" type="submit" color="green">
+                 <Icon name="angle double down" />
+                  Add Story
                 </Button>
               </Form>
             </Segment>
