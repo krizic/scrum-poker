@@ -1,6 +1,6 @@
 {
-  "name": "5-scrum-poker",
-  "version": "0.1.0",
+  "name": "scrum-poker",
+  "version": "0.1.1",
   "private": true,
   "dependencies": {
     "@nivo/pie": "^0.61.1",
