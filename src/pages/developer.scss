@@ -1,0 +1,16 @@
+.developer-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    justify-items: center;
+    align-content: stretch;
+    align-items: center;
+    height: 100%;
+    overflow: auto;
+    padding: 2rem;
+
+    .form-wrapper {
+        width: 30rem;
+    }
+
+}

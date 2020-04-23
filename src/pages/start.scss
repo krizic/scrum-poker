@@ -1,0 +1,13 @@
+div#start-page {
+    opacity: 0.93;
+    margin: 0 auto 0 auto;
+    width: 45rem;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.ui.form .field.invalid input {
+    border-color: red;
+}

@@ -1,0 +1,14 @@
+.dev-card {
+    margin: .5rem;
+    border-radius: .5rem;
+    box-shadow: 0 0 1px 1px rgba(77,77,77,.3);
+    transition: box-shadow 0.15s ease-out;
+    &:hover {
+        cursor: pointer;
+        box-shadow: 0 0 2px 2px rgba(77,77,77,.6);
+    }
+
+    &.selected{
+        background: #01a131;
+    }
+}
