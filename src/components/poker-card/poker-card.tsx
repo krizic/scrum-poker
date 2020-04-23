@@ -18,11 +18,8 @@ export interface IPokerCardProps {
 
 export interface IPokerCardState {}
 
-class PokerCard extends React.Component<
-  IPokerCardProps,
-  IPokerCardState
-> {
-  static defaultProps: { voterPattern: string; };
+class PokerCard extends React.Component<IPokerCardProps, IPokerCardState> {
+  static defaultProps: {voterPattern: string};
 
   constructor(props: IPokerCardProps) {
     super(props);
@@ -64,7 +61,9 @@ class PokerCard extends React.Component<
         <div
           className={`componentBack ${this.props.className}`}
           onClick={this.onSelect}
-          style={{backgroundImage: `url('/patterns/${this.props.voterPattern}.png')`}}
+          style={{
+            backgroundImage: `url('/patterns/${this.props.voterPattern}.png')`,
+          }}
         >
           <div className={"faceBack"}>
             <div className={"content"}>
@@ -94,13 +93,12 @@ class PokerCard extends React.Component<
         </div>
       );
 
-    return side;
+    return <div className="poker-card">{side}</div>;
   }
 }
 
-
 PokerCard.defaultProps = {
-  voterPattern: "8126"
-}
+  voterPattern: "8126",
+};
 
 export default PokerCard;

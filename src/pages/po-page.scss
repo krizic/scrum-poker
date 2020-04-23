@@ -4,6 +4,11 @@
   overflow: auto;
   height: 100vh;
 
+  .wrapper{
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
   .estimation-container {
     margin-top: 2rem;
     clear: both;

@@ -15,7 +15,6 @@ export default class EstimationChart extends React.Component<
   IEstimationChartProps,
   IEstimationChartState
 > {
-
   chartData: PieDatum[];
 
   constructor(props: IEstimationChartProps) {
@@ -23,61 +22,30 @@ export default class EstimationChart extends React.Component<
 
     this.state = {};
 
-    const pieDataMap = Object.keys(props.estimation.votes).reduce((acc, current) => {
-      const currentPieData = acc.get(
-        this.props.estimation.votes[current].value
-      );
+    const pieDataMap = Object.keys(props.estimation.votes).reduce(
+      (acc, current) => {
+        const voteValue =
+          this.props.estimation.votes[current].value ?? "no-vote";
 
-      if (currentPieData) {
-        currentPieData.value++;
-        acc.set(this.props.estimation.votes[current].value, currentPieData);
-      } else {
-        acc.set(this.props.estimation.votes[current].value, {
-          id: this.props.estimation.votes[current].value,
-          value: 1,
-          label: this.props.estimation.votes[current].value,
-        });
-      }
-      debugger;
-      return acc;
-    }, new Map<string, PieDatum>());
+        const currentPieData = acc.get(voteValue);
 
-    debugger;
+        if (currentPieData) {
+          currentPieData.value++;
+          acc.set(voteValue, currentPieData);
+        } else {
+          acc.set(voteValue, {
+            id: voteValue,
+            value: 1,
+            label: voteValue,
+          });
+        }
+        return acc;
+      },
+      new Map<string, PieDatum>()
+    );
+
     this.chartData = Array.from(pieDataMap.values());
   }
-
-  sampleData = [
-    {
-      id: "go",
-      label: "go",
-      value: 395,
-      color: "hsl(225, 70%, 50%)",
-    },
-    {
-      id: "rust",
-      label: "rust",
-      value: 311,
-      color: "hsl(119, 70%, 50%)",
-    },
-    {
-      id: "sass",
-      label: "sass",
-      value: 342,
-      color: "hsl(114, 70%, 50%)",
-    },
-    {
-      id: "javascript",
-      label: "javascript",
-      value: 516,
-      color: "hsl(211, 70%, 50%)",
-    },
-    {
-      id: "elixir",
-      label: "elixir",
-      value: 430,
-      color: "hsl(153, 70%, 50%)",
-    },
-  ];
 
   public render() {
     const component: React.ReactElement =
@@ -87,8 +55,8 @@ export default class EstimationChart extends React.Component<
           <ResponsivePie
             data={this.chartData}
             margin={{top: 40, right: 80, bottom: 80, left: 80}}
-            startAngle={90}
-            endAngle={-90}
+            startAngle={0}
+            endAngle={90}
             sortByValue={true}
             padAngle={1}
             cornerRadius={5}
@@ -106,26 +74,6 @@ export default class EstimationChart extends React.Component<
             motionStiffness={90}
             // motionDamping={15}
             isInteractive={false}
-            legends={[
-              {
-                anchor: "bottom",
-                direction: "row",
-                translateY: 56,
-                itemWidth: 100,
-                itemHeight: 18,
-                itemTextColor: "#999",
-                symbolSize: 18,
-                symbolShape: "circle",
-                effects: [
-                  {
-                    on: "hover",
-                    style: {
-                      itemTextColor: "#000",
-                    },
-                  },
-                ],
-              },
-            ]}
           ></ResponsivePie>
         </Segment>
       ) : (

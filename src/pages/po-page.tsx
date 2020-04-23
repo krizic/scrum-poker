@@ -48,7 +48,9 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   };
 
   onEstimationFormInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event:
+      | React.ChangeEvent<HTMLTextAreaElement>
+      | React.ChangeEvent<HTMLInputElement>
   ) => {
     const estimationForm = {
       ...this.state.estimationForm,
@@ -95,52 +97,54 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
     return (
       <div id="po-page">
-        <Segment.Group>
-          <Segment secondary clearing className="session-header">
-            Session name: {this.state.session?.session_name}
-            <Button
-              onClick={this.onCopyButtonClick}
-              color="blue"
-              size="mini"
-              floated="right"
-              inverted
-            >
-              <Icon name="share alternate" />
-              Copy Invitation Link
-            </Button>
-          </Segment>
-          <Segment>
-            <Form
-              onSubmit={(event) => {
-                this.onEstimationFormSubmit(this.state.estimationForm);
-              }}
-            >
-              <Form.Field>
-                <input
-                  name="estimation_name"
-                  placeholder="Estimation Name"
-                  onChange={this.onEstimationFormInputChange}
-                  value={this.state.estimationForm?.estimation_name}
-                />
-              </Form.Field>
-              <Form.Field>
-                <input
-                  name="estimation_description"
-                  placeholder="Estimation Description"
-                  onChange={this.onEstimationFormInputChange}
-                  value={this.state.estimationForm?.estimation_description}
-                />
-              </Form.Field>
-              <Button floated="right" type="submit">
-                New
+        <div className="wrapper">
+          <Segment.Group>
+            <Segment secondary clearing className="session-header">
+              Session: {this.state.session?.session_name}
+              <Button
+                onClick={this.onCopyButtonClick}
+                color="blue"
+                size="mini"
+                floated="right"
+                inverted
+              >
+                <Icon name="share alternate" />
+                Copy Invitation Link
               </Button>
-            </Form>
-          </Segment>
-        </Segment.Group>
-        <Segment.Group className="estimation-container">
-          <Segment textAlign="center">{estimationsComponent}</Segment>
-        </Segment.Group>
-        <ToastContainer autoClose={3000} />
+            </Segment>
+            <Segment>
+              <Form
+                onSubmit={(event) => {
+                  this.onEstimationFormSubmit(this.state.estimationForm);
+                }}
+              >
+                <Form.Field>
+                  <input
+                    name="estimation_name"
+                    placeholder="Story Name"
+                    onChange={this.onEstimationFormInputChange}
+                    value={this.state.estimationForm?.estimation_name}
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <textarea
+                    name="estimation_description"
+                    placeholder="Story Description"
+                    onChange={this.onEstimationFormInputChange}
+                    value={this.state.estimationForm?.estimation_description}
+                  ></textarea>
+                </Form.Field>
+                <Button floated="right" type="submit">
+                  New
+                </Button>
+              </Form>
+            </Segment>
+          </Segment.Group>
+          <Segment.Group className="estimation-container">
+            <Segment textAlign="center">{estimationsComponent}</Segment>
+          </Segment.Group>
+          <ToastContainer autoClose={3000} />
+        </div>
       </div>
     );
   }

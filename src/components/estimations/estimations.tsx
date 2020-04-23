@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Tab, Segment} from "semantic-ui-react";
+import {Tab} from "semantic-ui-react";
 
 import {IEstimation} from "../../api/interfaces";
 import VotesTable from "../votes-table/votes-table";
@@ -47,11 +47,8 @@ export default class Estimations extends React.Component<
             <Tab.Pane className="tab-container">
               <VotesTable
                 documentRef={{_rev: this.props.rev, _id: this.props.id}}
-                estimate={this.props.estimations[estimationKey]}
-              ></VotesTable>
-              { !(this.props.estimations[estimationKey].isActive) && (<EstimationChart
                 estimation={this.props.estimations[estimationKey]}
-              ></EstimationChart>)}
+              ></VotesTable>
             </Tab.Pane>
           ),
         };
