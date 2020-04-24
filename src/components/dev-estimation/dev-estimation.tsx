@@ -1,10 +1,11 @@
 import * as React from "react";
 import {ApiService} from "../../api";
 import {IEstimation} from "../../api/interfaces";
-import {Segment} from "semantic-ui-react";
+import {Segment, Divider} from "semantic-ui-react";
 import {IUserInfo} from "../../services";
 import PokerCard from "../poker-card/poker-card";
 import "./dev-estimation.scss";
+import ReactMarkdown from "react-markdown";
 
 export interface IDevEstimationProps {
   sessionId: string;
@@ -101,11 +102,17 @@ export default class DevEstimation extends React.Component<
         {this.state.activeEstimation && (
           <Segment.Group>
             <Segment color="violet">
-              Estimation Name: {this.state.activeEstimation.name}
+              Story Name: {this.state.activeEstimation.name}
             </Segment>
-            <Segment secondary>
-              Estimation Description: {this.state.activeEstimation.description}
-            </Segment>
+            {this.state.activeEstimation.description && (
+              <Segment secondary>
+                Story Description:
+                <Divider />
+                <ReactMarkdown
+                  source={this.state.activeEstimation.description}
+                ></ReactMarkdown>
+              </Segment>
+            )}
             <Segment>
               <div className="card-wrapper">
                 {this.cardValues.map((value) => {

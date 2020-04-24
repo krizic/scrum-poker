@@ -51,7 +51,7 @@ export default class EstimationStatistics extends React.Component<
       },
       {min: null, max: null}
     );
-    return `${minMax.min} - ${minMax.max}`;
+    return (minMax.min !== null && minMax.max !== null) ? `${minMax.min} - ${minMax.max}` : 'n/a';
   }
 
   getEstimationAverage(estimation: IEstimation): string {
@@ -64,7 +64,7 @@ export default class EstimationStatistics extends React.Component<
       {value: 0, count: 0}
     );
 
-    return (total.value / total.count).toFixed(2);
+    return total.count > 0 ? (total.value / total.count).toFixed(2) : "n/a";
   }
 
   public render() {

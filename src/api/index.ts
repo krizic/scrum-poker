@@ -1,6 +1,7 @@
 import PouchDB from "pouchdb";
-import {ISessionDb, IEstimation} from "./interfaces";
 import {v4 as uuid} from "uuid";
+
+import {ISessionDb, IEstimation} from "./interfaces";
 import {IUserInfo} from "../services";
 
 export class ApiService {
@@ -68,6 +69,13 @@ export class ApiService {
         }
       }
     );
+  }
+
+  importEstimations(sessionId: string, estimations: {[key: string]: IEstimation}){
+    return this.getSession(sessionId).then((session) => {
+      session.estimations = Object.assign({}, session.estimations, estimations);
+      return this.update(session);
+    })
   }
 
   createNewEstimation(

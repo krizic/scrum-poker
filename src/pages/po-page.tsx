@@ -1,12 +1,15 @@
 import * as React from "react";
 import {withRouter, RouteComponentProps} from "react-router-dom";
-import {ISessionDb} from "../api/interfaces";
-import {ApiService} from "../api";
 import {Button, Segment, Form, Icon} from "semantic-ui-react";
 import {toast, ToastContainer} from "react-toastify";
+import Papa from "papaparse";
+import {v4 as uuid} from "uuid";
 
 import "./po-page.scss";
+import {ISessionDb, IEstimation} from "../api/interfaces";
+import {ApiService} from "../api";
 import Estimations from "../components/estimations/estimations";
+import {ImportZone} from "../components/import-zone/import-zone";
 
 interface IEstimationForm {
   estimation_name: string;
@@ -73,6 +76,69 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
     }
   };
 
+  onImportFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.importEstimationsFromFile(event.target.files[0]);
+  };
+
+  onImportFileAccepted = (acceptedFiles: File[]) => {
+    this.importEstimationsFromFile(acceptedFiles[0]);
+  };
+
+  importEstimationsFromFile(file: File) {
+    Papa.parse(file, {
+      complete: (results) => {
+        console.log(results);
+
+        if (!results.errors.length) {
+          const fields = (results.data[0] as string[]).reduce(
+            (acc, current, curentIndex) => {
+              if (current === "Issue key") {
+                acc.issueKey = curentIndex;
+              }
+
+              if (current === "Description") {
+                acc.description = curentIndex;
+              }
+
+              return acc;
+            },
+            {issueKey: 0, description: 0}
+          );
+
+          const valuesArray = results.data.filter(
+            (current, currentIndex, arr) => {
+              return currentIndex !== 0 && currentIndex !== arr.length - 1;
+            }
+          );
+
+          const importedEstimations: {
+            [key: string]: IEstimation;
+          } = valuesArray.reduce(
+            (acc: {[key: string]: Partial<IEstimation>}, current: string[]) => {
+              const estimationId = uuid();
+              acc[estimationId] = {
+                id: estimationId,
+                name: current[fields.issueKey],
+                description: current[fields.description],
+                votes: {},
+              };
+
+              return acc;
+            },
+            {}
+          );
+
+          this.api
+            .importEstimations(this.sessionId, importedEstimations)
+            .then((response) => {
+            });
+        } else {
+          // error information with toaster;
+        }
+      },
+    });
+  }
+
   onCopyButtonClick = () => {
     const devSessionUrl = `${window.location.origin}/dev?id=${this.sessionId}`;
     navigator.clipboard.writeText(devSessionUrl);
@@ -112,35 +178,42 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
                 Copy Invitation Link
               </Button>
             </Segment>
-            <Segment>
-              <Form
-                onSubmit={(event) => {
-                  this.onEstimationFormSubmit(this.state.estimationForm);
-                }}
-              >
-                <Form.Field>
-                  <input
-                    name="estimation_name"
-                    placeholder="Story Name"
-                    onChange={this.onEstimationFormInputChange}
-                    value={this.state.estimationForm?.estimation_name}
-                  />
-                </Form.Field>
-                <Form.Field>
-                  <textarea
-                    rows={2}
-                    name="estimation_description"
-                    placeholder="Story Description"
-                    onChange={this.onEstimationFormInputChange}
-                    value={this.state.estimationForm?.estimation_description}
-                  ></textarea>
-                </Form.Field>
-                <Button floated="left" type="submit" color="green">
-                 <Icon name="angle double down" />
-                  Add Story
-                </Button>
-              </Form>
-            </Segment>
+            <Segment.Group className="estimation-form-group" horizontal>
+              <Segment>
+                <Form
+                  onSubmit={(event) => {
+                    this.onEstimationFormSubmit(this.state.estimationForm);
+                  }}
+                >
+                  <Form.Field>
+                    <input
+                      name="estimation_name"
+                      placeholder="Story Name"
+                      onChange={this.onEstimationFormInputChange}
+                      value={this.state.estimationForm?.estimation_name}
+                    />
+                  </Form.Field>
+                  <Form.Field>
+                    <textarea
+                      rows={2}
+                      name="estimation_description"
+                      placeholder="Story Description"
+                      onChange={this.onEstimationFormInputChange}
+                      value={this.state.estimationForm?.estimation_description}
+                    ></textarea>
+                  </Form.Field>
+                  <Button floated="left" type="submit" color="green">
+                    <Icon name="angle double down" />
+                    Add Story
+                  </Button>
+                </Form>
+              </Segment>
+              <Segment className="estimation-form-group__upload">
+                <ImportZone
+                  onFileUploaded={this.onImportFileAccepted}
+                ></ImportZone>
+              </Segment>
+            </Segment.Group>
           </Segment.Group>
           <Segment.Group className="estimation-container">
             <Segment textAlign="center">{estimationsComponent}</Segment>

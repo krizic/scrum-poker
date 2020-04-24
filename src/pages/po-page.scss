@@ -4,7 +4,7 @@
   overflow: auto;
   height: 100vh;
 
-  .wrapper{
+  .wrapper {
     max-width: 980px;
     margin: 0 auto;
   }
@@ -17,5 +17,13 @@
   .session-header {
     font-size: 1.5rem;
     line-height: 1.5rem;
+  }
+
+  .estimation-form-group {
+    background-color: white;
+    
+    &__upload {
+      flex: 1;
+    }
   }
 }

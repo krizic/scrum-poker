@@ -1,12 +1,13 @@
 import * as React from "react";
 import {Button, Segment, SegmentGroup, Message, Icon} from "semantic-ui-react";
+import ReactMarkdown from "react-markdown";
 
 import "./votes-table.scss";
 import {IEstimation} from "../../api/interfaces";
 import {ApiService} from "../../api";
 import CardReveal from "../card-reveal/card-reveal";
 import EstimationChart from "../estimation-chart/estimation-chart";
-import EstimationStatistics from "../est-statistics";
+import EstimationStatistics from "../est-statistics/est-statistics";
 
 export interface IVotesTableProps {
   estimation: IEstimation;
@@ -74,6 +75,11 @@ export default class VotesTable extends React.Component<
               />
             </Button.Group>
           </Segment>
+          {this.props.estimation.description && (
+            <Segment secondary textAlign="left">
+              <ReactMarkdown source={this.props.estimation.description} />
+            </Segment>
+          )}
           {!this.props.estimation.isActive &&
             !!Object.keys(this.props.estimation.votes ?? {}).length && (
               <Segment.Group horizontal>
