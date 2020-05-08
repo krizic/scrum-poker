@@ -7,69 +7,70 @@ import {
   Divider,
   List,
   Header,
+  CheckboxProps,
 } from "semantic-ui-react";
 import {withRouter, RouteComponentProps} from "react-router-dom";
 
-import {ApiService} from "../api";
-import "./start.scss";
-import {LocalSessionApi, ISessionAccess} from "../services/local-session-storage";
+import "./home.scss";
+import {
+  LocalSessionApi,
+  ISessionAccess,
+} from "../services/local-session-storage";
 import {timeFormat} from "../utils";
+import {SessionService} from "../api/sessions.service";
+import { AppRoutes } from "../constants";
 
-export interface IStartProps extends RouteComponentProps {}
+export interface IHomeProps extends RouteComponentProps {}
 
-export interface IStartState {
+export interface IHomeState {
   form: IForm;
   valid?: IForm;
   previousSessions: ISessionAccess[] | null;
 }
 
 interface IForm {
-  session_name: string;
-  session_pin: string;
-  [key: string]: string;
+  name: string;
+  password: string;
+  private: boolean;
 }
 
 enum FormField {
-  session_name = "session_name",
-  session_pin = "session_pin",
+  name = "name",
+  password = "password",
+  private = "private",
 }
 
-class Start extends React.Component<IStartProps, IStartState> {
-  api: ApiService = ApiService.Instance;
+class Home extends React.Component<IHomeProps, IHomeState> {
+  sessionApi: SessionService = SessionService.Instance;
 
-  state: IStartState = {
+  state: IHomeState = {
     form: {
-      session_name: "",
-      session_pin: "",
+      name: "",
+      password: "",
+      private: false,
     },
 
     previousSessions: LocalSessionApi.getSessions(),
   };
 
   componentDidMount() {
-    this.api.info().then((data) => {
+    this.sessionApi.info().then((data) => {
       console.log("info", data);
     });
   }
 
   onFormSubmit = (formData: IForm) => {
-    this.setState({
-      valid: Object.keys(formData).reduce((next: any, current) => {
-        next[current] = formData[current] !== "" ? "valid" : "invalid";
-        return next;
-      }, {}) as IForm,
-    });
-    if (formData.session_name !== "" && formData.session_pin !== "") {
+    if (formData.name !== "" && (!formData.private || formData.password !== "")) {
       const newSession = {...formData, ...{created_at: new Date().getTime()}};
-      this.api.post(newSession).then((response) => {
+      this.sessionApi.post(newSession).then((response) => {
         if (response.ok) {
           LocalSessionApi.saveSession({
             _id: response.id,
-            session_name: formData.session_name,
-            session_pin: formData.session_pin,
+            name: formData.name,
+            password: formData.password,
             created_at: newSession.created_at,
           });
-          this.props.history.push(`/po?id=${response.id}`);
+          this.props.history.push(`${AppRoutes.Session}/${response.id}`);
         }
       });
     }
@@ -80,27 +81,26 @@ class Start extends React.Component<IStartProps, IStartState> {
       ...this.state.form,
       ...{[event.currentTarget.name]: event.currentTarget.value},
     };
-
     this.setState({form});
   };
 
   onPreviousSessionDelete = (event: React.MouseEvent, sessionId: string) => {
     event.stopPropagation();
-    this.api.delete(sessionId).finally(() => {
+    this.sessionApi.delete(sessionId).finally(() => {
       LocalSessionApi.deleteSession(sessionId);
       this.setState({previousSessions: LocalSessionApi.getSessions()});
     });
   };
 
   onSessionLinkClick = (sessionId: string) => {
-    this.props.history.push(`/po?id=${sessionId}`);
+    this.props.history.push(`${AppRoutes.Session}/${sessionId}`);
   };
 
   public render() {
     return (
-      <div id="start-page">
+      <div id="home-page">
         <Segment raised>
-          <Grid columns= {2} stackable>
+          <Grid columns={2} stackable>
             <Grid.Column verticalAlign="middle">
               <Header textAlign="center">New Session</Header>
               <Form
@@ -113,32 +113,50 @@ class Start extends React.Component<IStartProps, IStartState> {
                   fluid
                   icon="clock outline"
                   iconPosition="left"
-                  name={FormField.session_name}
-                  value={this.state.form.session_name}
+                  name={FormField.name}
+                  value={this.state.form.name}
                   label="Session Name"
                   placeholder="Session Name"
                   onChange={this.onInputChange}
-                  className={this.state.valid?.session_name}
+                  className={this.state.valid?.name}
                 />
-                <Form.Input
-                  required
-                  fluid
-                  icon="lock"
-                  iconPosition="left"
-                  name={FormField.session_pin}
-                  value={this.state.form.session_pin}
-                  label="Session PIN"
-                  placeholder="Session PIN"
-                  onChange={this.onInputChange}
-                  className={this.state.valid?.session_pin}
+                <Form.Checkbox
+                  toggle
+                  name={FormField.private}
+                  checked={this.state.form.private}
+                  label="Private"
+                  onChange={(
+                    event: React.SyntheticEvent,
+                    data: CheckboxProps
+                  ) => {
+                    const form = {
+                      ...this.state.form,
+                      ...{[FormField.private]: data.checked},
+                    };
+                    this.setState({form});
+                  }}
                 />
+                {this.state.form.private && (
+                  <Form.Input
+                    required={this.state.form.private}
+                    fluid
+                    icon="lock"
+                    iconPosition="left"
+                    name={FormField.password}
+                    value={this.state.form.password}
+                    label="Session Password"
+                    placeholder="Session Password"
+                    onChange={this.onInputChange}
+                  />
+                )}
+
                 <Button type="submit" primary>
                   Submit
                 </Button>
               </Form>
             </Grid.Column>
             <Grid.Column verticalAlign="top">
-              <Header textAlign="center">Recent Sessions</Header>
+              <Header textAlign="center">Your Recent Sessions</Header>
               <List divided verticalAlign="middle">
                 {this.state.previousSessions?.length ? (
                   this.state.previousSessions?.map((session) => {
@@ -163,7 +181,7 @@ class Start extends React.Component<IStartProps, IStartState> {
                           verticalAlign="middle"
                         />
                         <List.Content>
-                          <List.Header>{session.session_name}</List.Header>
+                          <List.Header>{session.name}</List.Header>
                           <List.Description>
                             {timeFormat(session.created_at)}
                           </List.Description>
@@ -186,4 +204,4 @@ class Start extends React.Component<IStartProps, IStartState> {
   }
 }
 
-export default withRouter(Start);
+export default withRouter(Home);

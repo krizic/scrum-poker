@@ -1,3 +1,6 @@
+export * from "./session.interface";
+
+
 export interface ISessionDb {
     session_name?: string;
     session_pin?: string;

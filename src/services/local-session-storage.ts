@@ -1,8 +1,7 @@
-export interface ISessionAccess {
+import { ISessionDto } from "../api/interfaces";
+
+export interface ISessionAccess extends ISessionDto {
   _id: string;
-  session_name: string;
-  session_pin: string;
-  created_at: number;
 }
 
 const sessionKey = "sp_sessions";

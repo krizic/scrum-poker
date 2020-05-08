@@ -16,7 +16,11 @@ interface IEstimationForm {
   estimation_description: string;
 }
 
-export interface IPoPageProps extends RouteComponentProps {}
+interface RouteParams {
+  id: string;
+}
+
+export interface IPoPageProps extends RouteComponentProps<RouteParams> {}
 
 export interface IPoPageState {
   session?: PouchDB.Core.Document<ISessionDb> & PouchDB.Core.GetMeta;
@@ -29,13 +33,11 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
   constructor(props: IPoPageProps) {
     super(props);
-
-    const params = new URLSearchParams(this.props.location.search);
-    this.sessionId = params.get("id");
     this.state = {};
   }
 
   componentDidMount() {
+    this.sessionId = this.props.match.params.id;
     if (this.sessionId) {
       this.getSession();
       this.api.onChange(this.getSession);
@@ -130,8 +132,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
           this.api
             .importEstimations(this.sessionId, importedEstimations)
-            .then((response) => {
-            });
+            .then((response) => {});
         } else {
           // error information with toaster;
         }
