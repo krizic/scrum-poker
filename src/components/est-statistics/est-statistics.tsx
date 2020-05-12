@@ -57,7 +57,7 @@ export default class EstimationStatistics extends React.Component<
   getEstimationAverage(estimation: IEstimation): string {
     const total = this.filterInvalidEstimations(estimation).reduce(
       (acc, current) => {
-        acc.value = acc.count + parseInt(estimation.votes[current].value);
+        acc.value = acc.value + parseInt(estimation.votes[current].value);
         acc.count++;
         return acc;
       },
