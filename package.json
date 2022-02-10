@@ -63,7 +63,7 @@
     "@types/uuid": "^7.0.2",
     "gh-pages": "^2.2.0",
     "git-stats": "^2.10.11",
-    "node-sass": "^4.13.1",
+    "node-sass": "^7.0.0",
     "pouchdb-server": "^4.2.0",
     "react-app-env": "^1.2.3"
   },
