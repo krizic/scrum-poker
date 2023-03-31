@@ -1,8 +1,8 @@
 import * as React from "react";
-import {ApiService} from "../../api";
-import {IEstimation} from "../../api/interfaces";
-import {Segment, Divider} from "semantic-ui-react";
-import {IUserInfo} from "../../services";
+import { ApiService } from "../../api";
+import { IEstimation } from "../../api/interfaces";
+import { Segment, Divider } from "semantic-ui-react";
+import { IUserInfo } from "../../services";
 import PokerCard from "../poker-card/poker-card";
 import "./dev-estimation.scss";
 import ReactMarkdown from "react-markdown";
@@ -16,6 +16,7 @@ export interface IDevEstimationState {
   activeEstimation?: IEstimation;
   sessionName?: string;
   currentSelectedVote?: string;
+  oneLoading?: string;
 }
 
 export default class DevEstimation extends React.Component<
@@ -76,13 +77,15 @@ export default class DevEstimation extends React.Component<
     });
   };
 
-  onCardSelected = (value: string) => {
-    this.api.vote(
+  onCardSelected = async (value: string) => {
+    this.setState({ oneLoading: value });
+    await this.api.vote(
       this.props.sessionId,
       this.state.activeEstimation.id,
       this.props.userInfo,
       value
     );
+    this.setState({ oneLoading: null });
   };
 
   public render() {
@@ -109,8 +112,8 @@ export default class DevEstimation extends React.Component<
                 Story Description:
                 <Divider />
                 <ReactMarkdown
-                  source={this.state.activeEstimation.description}
-                ></ReactMarkdown>
+                  children={this.state.activeEstimation.description}
+                />
               </Segment>
             )}
             <Segment>
@@ -118,6 +121,8 @@ export default class DevEstimation extends React.Component<
                 {this.cardValues.map((value) => {
                   return (
                     <PokerCard
+                      isLoading={this.state.oneLoading === value}
+                      key={value}
                       onSelect={this.onCardSelected}
                       className={`dev-card ${
                         value === this.state.currentSelectedVote

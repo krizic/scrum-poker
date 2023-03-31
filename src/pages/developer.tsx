@@ -1,13 +1,13 @@
 import * as React from "react";
-import {withRouter, RouteComponentProps} from "react-router-dom";
 import "./developer.scss";
 import {IUserInfo, LocalUserInfoApi} from "../services";
 import DevSignIn from "../components/dev-sign-in/dev-sign-in";
 import DevEstimation from "../components/dev-estimation/dev-estimation";
 import {Segment, Loader} from "semantic-ui-react";
 import {ApiService} from "../api";
+import { WithRoutes, withRouter } from "../utils";
 
-export interface IDeveloperPageProps extends RouteComponentProps {}
+export interface IDeveloperPageProps extends WithRoutes {}
 
 export interface IDeveloperPageState {
   userInfo?: IUserInfo;
@@ -26,7 +26,7 @@ class DeveloperPage extends React.Component<
   constructor(props: IDeveloperPageProps) {
     super(props);
 
-    const params = new URLSearchParams(this.props.location.search);
+    const params = new URLSearchParams(this.props.router.location.search);
     this.sessionId = params.get("id");
     this.state = {userInfo: LocalUserInfoApi.getUserInfo() || undefined};
   }

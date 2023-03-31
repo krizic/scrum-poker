@@ -8,14 +8,16 @@ import {
   List,
   Header,
 } from "semantic-ui-react";
-import {withRouter, RouteComponentProps} from "react-router-dom";
 
-import {ApiService} from "../api";
+import { ApiService } from "../api";
 import "./start.scss";
-import {LocalSessionApi, ISessionAccess} from "../services/local-session-storage";
-import {timeFormat} from "../utils";
+import {
+  LocalSessionApi,
+  ISessionAccess,
+} from "../services/local-session-storage";
+import { WithRoutes, timeFormat, withRouter } from "../utils";
 
-export interface IStartProps extends RouteComponentProps {}
+export interface IStartProps extends WithRoutes {}
 
 export interface IStartState {
   form: IForm;
@@ -53,14 +55,11 @@ class Start extends React.Component<IStartProps, IStartState> {
   }
 
   onFormSubmit = (formData: IForm) => {
-    this.setState({
-      valid: Object.keys(formData).reduce((next: any, current) => {
-        next[current] = formData[current] !== "" ? "valid" : "invalid";
-        return next;
-      }, {}) as IForm,
-    });
-    if (formData.session_name !== "" && formData.session_pin !== "") {
-      const newSession = {...formData, ...{created_at: new Date().getTime()}};
+    if (formData.session_name !== "") {
+      const newSession = {
+        ...formData,
+        ...{ created_at: new Date().getTime() },
+      };
       this.api.post(newSession).then((response) => {
         if (response.ok) {
           LocalSessionApi.saveSession({
@@ -69,7 +68,9 @@ class Start extends React.Component<IStartProps, IStartState> {
             session_pin: formData.session_pin,
             created_at: newSession.created_at,
           });
-          this.props.history.push(`/po?id=${response.id}`);
+          this.props.router.navigate(`/po?id=${response.id}`, {
+            replace: true,
+          });
         }
       });
     }
@@ -78,29 +79,29 @@ class Start extends React.Component<IStartProps, IStartState> {
   onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const form = {
       ...this.state.form,
-      ...{[event.currentTarget.name]: event.currentTarget.value},
+      ...{ [event.currentTarget.name]: event.currentTarget.value },
     };
 
-    this.setState({form});
+    this.setState({ form });
   };
 
   onPreviousSessionDelete = (event: React.MouseEvent, sessionId: string) => {
     event.stopPropagation();
     this.api.delete(sessionId).finally(() => {
       LocalSessionApi.deleteSession(sessionId);
-      this.setState({previousSessions: LocalSessionApi.getSessions()});
+      this.setState({ previousSessions: LocalSessionApi.getSessions() });
     });
   };
 
   onSessionLinkClick = (sessionId: string) => {
-    this.props.history.push(`/po?id=${sessionId}`);
+    this.props.router.navigate(`/po?id=${sessionId}`, { replace: true });
   };
 
   public render() {
     return (
       <div id="start-page">
         <Segment raised>
-          <Grid columns= {2} stackable>
+          <Grid columns={2} stackable>
             <Grid.Column verticalAlign="middle">
               <Header textAlign="center">New Session</Header>
               <Form
@@ -121,9 +122,10 @@ class Start extends React.Component<IStartProps, IStartState> {
                   className={this.state.valid?.session_name}
                 />
                 <Form.Input
-                  required
+                  required={false}
                   fluid
                   icon="lock"
+                  disabled
                   iconPosition="left"
                   name={FormField.session_pin}
                   value={this.state.form.session_pin}

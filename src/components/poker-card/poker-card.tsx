@@ -2,9 +2,11 @@ import * as React from "react";
 import Gravatar from "react-gravatar";
 
 import "./index.scss";
-import {Dimmer, Loader} from "semantic-ui-react";
+import { Dimmer, Loader } from "semantic-ui-react";
 
 export interface IPokerCardProps {
+  isLoading?: boolean;
+  children?: React.ReactNode;
   className?: string;
   voteValue?: string;
   voterUsername?: string;
@@ -19,7 +21,7 @@ export interface IPokerCardProps {
 export interface IPokerCardState {}
 
 class PokerCard extends React.Component<IPokerCardProps, IPokerCardState> {
-  static defaultProps: {voterPattern: string};
+  static defaultProps: { voterPattern: string };
 
   constructor(props: IPokerCardProps) {
     super(props);
@@ -42,7 +44,11 @@ class PokerCard extends React.Component<IPokerCardProps, IPokerCardState> {
         >
           <div className={"faceFront"}>
             <div className={"content"}>
-              <div className={"valueFront"}>{this.props.voteValue}</div>
+              {this.props.isLoading ? (
+                <div className="ui active large inline loader"></div>
+              ) : (
+                <div className={"valueFront"}>{this.props.voteValue}</div>
+              )}
               {this.props.withProfilePic && (
                 <div className={"labelFront"}>
                   <Gravatar

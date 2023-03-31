@@ -1,5 +1,4 @@
 import * as React from "react";
-import {withRouter, RouteComponentProps} from "react-router-dom";
 import {Button, Segment, Form, Icon} from "semantic-ui-react";
 import {toast, ToastContainer} from "react-toastify";
 import Papa from "papaparse";
@@ -10,13 +9,14 @@ import {ISessionDb, IEstimation} from "../api/interfaces";
 import {ApiService} from "../api";
 import Estimations from "../components/estimations/estimations";
 import {ImportZone} from "../components/import-zone/import-zone";
+import { WithRoutes, withRouter } from "../utils";
 
 interface IEstimationForm {
   estimation_name: string;
   estimation_description: string;
 }
 
-export interface IPoPageProps extends RouteComponentProps {}
+export interface IPoPageProps extends WithRoutes {}
 
 export interface IPoPageState {
   session?: PouchDB.Core.Document<ISessionDb> & PouchDB.Core.GetMeta;
@@ -30,7 +30,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   constructor(props: IPoPageProps) {
     super(props);
 
-    const params = new URLSearchParams(this.props.location.search);
+    const params = new URLSearchParams(this.props.router.location.search);
     this.sessionId = params.get("id");
     this.state = {};
   }
@@ -113,7 +113,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
           const importedEstimations: {
             [key: string]: IEstimation;
-          } = valuesArray.reduce(
+          } | {} = valuesArray.length ? valuesArray.reduce(
             (acc: {[key: string]: Partial<IEstimation>}, current: string[]) => {
               const estimationId = uuid();
               acc[estimationId] = {
@@ -125,8 +125,8 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
               return acc;
             },
-            {}
-          );
+            {} as {[key: string]: IEstimation}
+          ):  undefined;
 
           this.api
             .importEstimations(this.sessionId, importedEstimations)

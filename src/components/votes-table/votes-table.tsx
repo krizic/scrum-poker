@@ -1,17 +1,23 @@
 import * as React from "react";
-import {Button, Segment, SegmentGroup, Message, Icon} from "semantic-ui-react";
+import {
+  Button,
+  Segment,
+  SegmentGroup,
+  Message,
+  Icon,
+} from "semantic-ui-react";
 import ReactMarkdown from "react-markdown";
 
 import "./votes-table.scss";
-import {IEstimation} from "../../api/interfaces";
-import {ApiService} from "../../api";
+import { IEstimation } from "../../api/interfaces";
+import { ApiService } from "../../api";
 import CardReveal from "../card-reveal/card-reveal";
 import EstimationChart from "../estimation-chart/estimation-chart";
 import EstimationStatistics from "../est-statistics/est-statistics";
 
 export interface IVotesTableProps {
   estimation: IEstimation;
-  documentRef: {_id: string; _rev: string};
+  documentRef: { _id: string; _rev: string };
 }
 
 export interface IVotesTableState {}
@@ -77,7 +83,7 @@ export default class VotesTable extends React.Component<
           </Segment>
           {this.props.estimation.description && (
             <Segment secondary textAlign="left">
-              <ReactMarkdown source={this.props.estimation.description} />
+              <ReactMarkdown children={this.props.estimation.description} />
             </Segment>
           )}
           {!this.props.estimation.isActive &&
@@ -105,6 +111,7 @@ export default class VotesTable extends React.Component<
                 {Object.keys(this.props.estimation.votes).map((voteKey) => {
                   return (
                     <CardReveal
+                      key={voteKey}
                       vote={this.props.estimation.votes[voteKey]}
                       shouldHide={this.props.estimation.isActive}
                     ></CardReveal>

@@ -1,9 +1,9 @@
 import * as React from "react";
-import {Segment} from "semantic-ui-react";
-import {ResponsivePie, PieDatum} from "@nivo/pie";
+import { Segment } from "semantic-ui-react";
+import { ResponsivePie, DefaultRawDatum } from "@nivo/pie";
 import "./estimation-chart.scss";
 
-import {IEstimation} from "../../api/interfaces";
+import { IEstimation } from "../../api/interfaces";
 
 export interface IEstimationChartProps {
   estimation: IEstimation;
@@ -11,11 +11,14 @@ export interface IEstimationChartProps {
 
 export interface IEstimationChartState {}
 
+interface PieData extends DefaultRawDatum {
+  label: string;
+}
 export default class EstimationChart extends React.Component<
   IEstimationChartProps,
   IEstimationChartState
 > {
-  chartData: PieDatum[];
+  chartData: PieData[];
 
   constructor(props: IEstimationChartProps) {
     super(props);
@@ -41,7 +44,7 @@ export default class EstimationChart extends React.Component<
         }
         return acc;
       },
-      new Map<string, PieDatum>()
+      new Map<string, PieData>()
     );
 
     this.chartData = Array.from(pieDataMap.values());
@@ -54,26 +57,120 @@ export default class EstimationChart extends React.Component<
         <Segment className="chart-container">
           <ResponsivePie
             data={this.chartData}
-            margin={{top: 20, right: 0, bottom: 0, left: 80}}
-            startAngle={-90}
-            endAngle={0}
+            margin={{ top: 20, right: 0, bottom: 0, left: 80 }}
+            endAngle={-90}
             sortByValue={true}
-            padAngle={1}
-            cornerRadius={5}
-            radialLabelsSkipAngle={10}
-            radialLabelsTextXOffset={6}
-            radialLabelsTextColor="#000000"
-            radialLabelsLinkOffset={0}
-            radialLabelsLinkDiagonalLength={16}
-            radialLabelsLinkHorizontalLength={24}
-            radialLabelsLinkStrokeWidth={1}
-            radialLabelsLinkColor={{from: "color"}}
-            slicesLabelsSkipAngle={10}
-            slicesLabelsTextColor="#000000"
-            // animate={true}
-            motionStiffness={90}
-            // motionDamping={15}
-            isInteractive={false}
+            cornerRadius={14}
+            colors={{ scheme: "nivo" }}
+            borderColor={{
+              from: "color",
+              modifiers: [["darker", 0.2]],
+            }}
+            arcLinkLabelsTextOffset={10}
+            arcLinkLabelsTextColor="#333333"
+            arcLinkLabelsStraightLength={36}
+            arcLinkLabelsThickness={4}
+            arcLinkLabelsColor={{ from: "color" }}
+            arcLabelsRadiusOffset={0.9}
+            arcLabelsTextColor={{
+              from: "color",
+              modifiers: [["darker", 3]],
+            }}
+            defs={[
+              {
+                id: "dots",
+                type: "patternDots",
+                background: "inherit",
+                color: "rgba(255, 255, 255, 0.3)",
+                size: 4,
+                padding: 1,
+                stagger: true,
+              },
+              {
+                id: "lines",
+                type: "patternLines",
+                background: "inherit",
+                color: "rgba(255, 255, 255, 0.3)",
+                rotation: -45,
+                lineWidth: 6,
+                spacing: 10,
+              },
+            ]}
+            fill={[
+              {
+                match: {
+                  id: "ruby",
+                },
+                id: "dots",
+              },
+              {
+                match: {
+                  id: "c",
+                },
+                id: "dots",
+              },
+              {
+                match: {
+                  id: "go",
+                },
+                id: "dots",
+              },
+              {
+                match: {
+                  id: "python",
+                },
+                id: "dots",
+              },
+              {
+                match: {
+                  id: "scala",
+                },
+                id: "lines",
+              },
+              {
+                match: {
+                  id: "lisp",
+                },
+                id: "lines",
+              },
+              {
+                match: {
+                  id: "elixir",
+                },
+                id: "lines",
+              },
+              {
+                match: {
+                  id: "javascript",
+                },
+                id: "lines",
+              },
+            ]}
+            legends={[
+              {
+                anchor: "bottom",
+                direction: "row",
+                justify: false,
+                translateX: 0,
+                translateY: 56,
+                itemsSpacing: 0,
+                itemWidth: 100,
+                itemHeight: 18,
+                itemTextColor: "#999",
+                itemDirection: "left-to-right",
+                itemOpacity: 1,
+                symbolSize: 18,
+                symbolShape: "circle",
+                effects: [
+                  {
+                    on: "hover",
+                    style: {
+                      itemTextColor: "#000",
+                    },
+                  },
+                ],
+              },
+            ]}
           ></ResponsivePie>
         </Segment>
       ) : (
