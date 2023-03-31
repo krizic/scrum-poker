@@ -26,6 +26,7 @@
     "react-toastify": "^9.1.2",
     "semantic-ui-css": "^2.5.0",
     "semantic-ui-react": "^2.1.4",
+    "trianglify": "^4.1.1",
     "typescript": "^4.9.5",
     "uuid": "^9.0.0"
   },

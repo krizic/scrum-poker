@@ -16,6 +16,7 @@ import {
   ISessionAccess,
 } from "../services/local-session-storage";
 import { WithRoutes, timeFormat, withRouter } from "../utils";
+import { AppPath } from "../App";
 
 export interface IStartProps extends WithRoutes {}
 
@@ -68,9 +69,7 @@ class Start extends React.Component<IStartProps, IStartState> {
             session_pin: formData.session_pin,
             created_at: newSession.created_at,
           });
-          this.props.router.navigate(`/po?id=${response.id}`, {
-            replace: true,
-          });
+          this.props.router.navigate(`${AppPath.Po}?id=${response.id}`);
         }
       });
     }

@@ -3,6 +3,7 @@
         "Gravatar",
         "nivo",
         "papaparse",
-        "stackable"
+        "stackable",
+        "trianglify"
     ]
 }

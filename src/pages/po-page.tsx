@@ -91,13 +91,13 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
         if (!results.errors.length) {
           const fields = (results.data[0] as string[]).reduce(
-            (acc, current, curentIndex) => {
+            (acc, current, currentIndex) => {
               if (current === "Issue key") {
-                acc.issueKey = curentIndex;
+                acc.issueKey = currentIndex;
               }
 
               if (current === "Description") {
-                acc.description = curentIndex;
+                acc.description = currentIndex;
               }
 
               return acc;

@@ -7,7 +7,7 @@ const StartPage = React.lazy(() => import("./pages/start"));
 const DeveloperPage = React.lazy(() => import("./pages/developer"));
 const PoPage = React.lazy(() => import("./pages/po-page"));
 
-enum Path {
+export enum AppPath {
   Start = "/",
   Developer = "/dev",
   Po = "/po",
@@ -20,7 +20,7 @@ function App() {
     <BrowserRouter basename={baseName}>
       <Routes>
         <Route
-          path={Path.Developer}
+          path={AppPath.Developer}
           element={
             <Suspense fallback={<div>Loading...</div>}>
               <DeveloperPage />
@@ -28,7 +28,7 @@ function App() {
           }
         />
         <Route
-          path={Path.Po}
+          path={AppPath.Po}
           element={
             <Suspense fallback={<div>Loading...</div>}>
               <PoPage />
@@ -36,7 +36,7 @@ function App() {
           }
         />
         <Route
-          path={Path.Start}
+          path={AppPath.Start}
           element={
             <Suspense fallback={<div>Loading...</div>}>
               <StartPage />

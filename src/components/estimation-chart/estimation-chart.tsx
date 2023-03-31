@@ -66,6 +66,7 @@ export default class EstimationChart extends React.Component<
               from: "color",
               modifiers: [["darker", 0.2]],
             }}
+            animate={false}
             arcLinkLabelsTextOffset={10}
             arcLinkLabelsTextColor="#333333"
             arcLinkLabelsStraightLength={36}
