@@ -1,36 +1,49 @@
-import React from "react";
-import {BrowserRouter, Switch, Route} from "react-router-dom";
+import React, { Suspense } from "react";
+import { Routes, Route, BrowserRouter } from "react-router-dom";
 
-import StartPage from "./pages/start";
-import DeveloperPage from  "./pages/developer";
-import PoPage from  "./pages/po-page";
 import "./App.css";
 
-declare let particlesJS: any
+const StartPage = React.lazy(() => import("./pages/start"));
+const DeveloperPage = React.lazy(() => import("./pages/developer"));
+const PoPage = React.lazy(() => import("./pages/po-page"));
 
-particlesJS.load('particles-js', "particlesjs-config.json", () => {
-  console.log('callback - particles.js config loaded');
-});
+export enum AppPath {
+  Start = "/",
+  Developer = "/dev",
+  Po = "/po",
+}
 
 function App() {
-
   const baseName = process.env.REACT_APP_BASE;
 
   return (
     <BrowserRouter basename={baseName}>
-      {/* Sharable across the pages */}
-      <div id="particles-js"></div>
-      <Switch>
-        <Route path="/dev">
-          <DeveloperPage/>
-        </Route>
-        <Route path="/po">
-          <PoPage/>
-        </Route>
-        <Route path="/">
-          <StartPage/>
-        </Route>
-      </Switch>
+      <Routes>
+        <Route
+          path={AppPath.Developer}
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <DeveloperPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path={AppPath.Po}
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <PoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path={AppPath.Start}
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              <StartPage />
+            </Suspense>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

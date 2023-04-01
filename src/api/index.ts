@@ -1,15 +1,15 @@
 import PouchDB from "pouchdb";
-import {v4 as uuid} from "uuid";
+import { v4 as uuid } from "uuid";
 
-import {ISessionDb, IEstimation} from "./interfaces";
-import {IUserInfo} from "../services";
+import { ISessionDb, IEstimation } from "./interfaces";
+import { IUserInfo } from "../services";
 
 export class ApiService {
   readonly db_name = "sessions";
   private db: PouchDB.Database<ISessionDb>;
 
   private constructor() {
-    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`, {});
+    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`);
     console.log("API SERVICE", process.env.REACT_APP_API);
   }
 
@@ -32,7 +32,7 @@ export class ApiService {
 
   delete(sessionId: string) {
     return this.getSession(sessionId).then((session) => {
-      return this.db.remove({_id: sessionId, _rev: session._rev});
+      return this.db.remove({ _id: sessionId, _rev: session._rev });
     });
   }
 
@@ -48,7 +48,7 @@ export class ApiService {
     userInfo: IUserInfo,
     vote?: string
   ) {
-    this.getEstimation(sessionId, estimationId).then(
+    return this.getEstimation(sessionId, estimationId).then(
       ([estimation, session]: [
         IEstimation,
         ISessionDb & PouchDB.Core.IdMeta & PouchDB.Core.GetMeta
@@ -62,8 +62,8 @@ export class ApiService {
             voter_username: userInfo.username,
             voter_email: userInfo.email,
           };
-          this.updateEstimation(
-            {_id: session._id, _rev: session._rev},
+          return this.updateEstimation(
+            { _id: session._id, _rev: session._rev },
             estimation
           );
         }
@@ -71,11 +71,14 @@ export class ApiService {
     );
   }
 
-  importEstimations(sessionId: string, estimations: {[key: string]: IEstimation}){
+  importEstimations(
+    sessionId: string,
+    estimations: { [key: string]: IEstimation }
+  ) {
     return this.getSession(sessionId).then((session) => {
       session.estimations = Object.assign({}, session.estimations, estimations);
       return this.update(session);
-    })
+    });
   }
 
   createNewEstimation(
@@ -84,7 +87,7 @@ export class ApiService {
   ) {
     const id = uuid();
     const estimations = document.estimations ?? {};
-    estimations[id] = {...newEstimation, id} as any;
+    estimations[id] = { ...newEstimation, id } as any;
     document.estimations = estimations;
 
     return this.db.put(document);
@@ -95,7 +98,7 @@ export class ApiService {
     estimation: IEstimation
   ) {
     if (refDocument._id && refDocument._rev) {
-      this.db.get(refDocument._id).then((document) => {
+      return this.db.get(refDocument._id).then((document) => {
         if (document.estimations) {
           //set all other to inactive
           document.estimations = Object.keys(document.estimations).reduce(
@@ -112,9 +115,17 @@ export class ApiService {
             document.estimations
           );
         } else {
-          document.estimations = {[estimation.id!]: estimation};
+          document.estimations = { [estimation.id!]: estimation };
         }
-        return this.db.put(document);
+        return this.db
+          .put(document)
+          .then(() => {
+            return document;
+          })
+          .catch((err) => {
+            console.error("updateEstimation:put", err);
+            return document;
+          });
       });
     }
   }
