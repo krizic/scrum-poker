@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import trianglify from "trianglify";
+import * as Sentry from "@sentry/react";
 
 import * as serviceWorker from "./serviceWorker";
 import App from "./App";
@@ -8,6 +9,12 @@ import App from "./App";
 import "semantic-ui-css/semantic.min.css";
 import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
+
+Sentry.init({
+  dsn: `${process.env.REACT_APP_SENTRY}`,
+  integrations: [new Sentry.BrowserTracing()],
+  tracesSampleRate: 1.0,
+});
 
 ReactDOM.render(<App />, document.getElementById("root"));
 
