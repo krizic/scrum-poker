@@ -1,16 +1,16 @@
 import PouchDB from "pouchdb";
 import { v4 as uuid } from "uuid";
 
-import { ISessionDb, IEstimation } from "./interfaces";
-import { IUserInfo } from "../services";
+import type { ISessionDb, IEstimation } from "./interfaces";
+import type { IUserInfo } from "../services";
 
 export class ApiService {
   readonly db_name = "sessions";
   private db: PouchDB.Database<ISessionDb>;
 
   private constructor() {
-    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`);
-    console.log("API SERVICE", process.env.REACT_APP_API);
+    this.db = new PouchDB(`${import.meta.env.VITE_API}${this.db_name}`);
+    console.log("API SERVICE", import.meta.env.VITE_API);
   }
 
   info() {
@@ -115,6 +115,7 @@ export class ApiService {
             document.estimations
           );
         } else {
+          // biome-ignore lint/style/noNonNullAssertion: <explanation>
           document.estimations = { [estimation.id!]: estimation };
         }
         return this.db
@@ -134,6 +135,7 @@ export class ApiService {
     refDocument: PouchDB.Core.PutDocument<ISessionDb>,
     estimationId: string
   ) {
+    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     this.db.get(refDocument._id!).then((document) => {
       if (document.estimations) {
         delete document.estimations[estimationId];
@@ -158,6 +160,8 @@ export class ApiService {
   // Singleton set up
   private static _instance: ApiService;
   public static get Instance() {
-    return this._instance || (this._instance = new this());
+    // biome-ignore lint/complexity/noThisInStatic: <explanation>
+    // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+        return this._instance || (this._instance = new this());
   }
 }

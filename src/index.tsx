@@ -1,7 +1,7 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import trianglify from "trianglify";
 import * as Sentry from "@sentry/react";
+import React from "react"; // Add this line
 
 import * as serviceWorker from "./serviceWorker";
 import App from "./App";
@@ -11,14 +11,16 @@ import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
 
 Sentry.init({
-  dsn: `${process.env.REACT_APP_SENTRY}`,
+  dsn: `${import.meta.env.VITE_SENTRY}`,
   integrations: [new Sentry.BrowserTracing()],
   tracesSampleRate: 1.0,
 });
 
-ReactDOM.render(<App />, document.getElementById("root"));
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(<App />);
 
-var pattern = trianglify({
+const pattern = trianglify({
   width: window.innerWidth,
   height: window.innerHeight,
   xColors: [
@@ -35,12 +37,13 @@ var pattern = trianglify({
   yColors: "match",
   variance: 0.63,
   cellSize: 129,
-  colorFunction: trianglify.colorFunctions.interpolateLinear(0.37),
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  colorFunction: (trianglify as unknown as any).colorFunctions.interpolateLinear(0.37),
   fill: true,
   strokeWidth: 1,
 });
 
-const canvas = pattern.toCanvas() as HTMLCanvasElement;
+const canvas = pattern.toCanvas();
 canvas.className = "trianglify";
 
 document.body.appendChild(canvas);

@@ -12,10 +12,12 @@ import {
 import { ApiService } from "../api";
 import "./start.scss";
 import {
-  LocalSessionApi,
-  ISessionAccess,
+  deleteSession,
+  getSessions,
+  type ISessionAccess,
+  saveSession,
 } from "../services/local-session-storage";
-import { WithRoutes, timeFormat, withRouter } from "../utils";
+import { type WithRoutes, timeFormat, withRouter } from "../utils";
 import { AppPath } from "../App";
 
 export interface IStartProps extends WithRoutes {}
@@ -46,7 +48,7 @@ class Start extends React.Component<IStartProps, IStartState> {
       session_pin: "",
     },
 
-    previousSessions: LocalSessionApi.getSessions(),
+    previousSessions: getSessions(),
   };
 
   componentDidMount() {
@@ -63,7 +65,7 @@ class Start extends React.Component<IStartProps, IStartState> {
       };
       this.api.post(newSession).then((response) => {
         if (response.ok) {
-          LocalSessionApi.saveSession({
+          saveSession({
             _id: response.id,
             session_name: formData.session_name,
             session_pin: formData.session_pin,
@@ -87,8 +89,8 @@ class Start extends React.Component<IStartProps, IStartState> {
   onPreviousSessionDelete = (event: React.MouseEvent, sessionId: string) => {
     event.stopPropagation();
     this.api.delete(sessionId).finally(() => {
-      LocalSessionApi.deleteSession(sessionId);
-      this.setState({ previousSessions: LocalSessionApi.getSessions() });
+      deleteSession(sessionId);
+      this.setState({ previousSessions: getSessions() });
     });
   };
 
@@ -157,7 +159,7 @@ class Start extends React.Component<IStartProps, IStartState> {
                             onClick={(e) => {
                               this.onPreviousSessionDelete(e, session._id);
                             }}
-                          ></Button>
+                          />
                         </List.Content>
                         <List.Icon
                           name="clock outline"

@@ -14,7 +14,7 @@ export enum AppPath {
 }
 
 function App() {
-  const baseName = process.env.REACT_APP_BASE;
+  const baseName = import.meta.env.VITE_BASE;
 
   return (
     <BrowserRouter basename={baseName}>
