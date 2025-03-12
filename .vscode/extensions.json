@@ -1,11 +1,2 @@
 {
-    "recommendations": [
-      "eamodio.gitlens",
-      "eg2.vscode-npm-script",
-      "fknop.vscode-npm",
-      "christian-kohler.npm-intellisense",
-      "ms-vsliveshare.vsliveshare",
-      "donjayamanne.jquerysnippets",
-      "infeng.vscode-react-typescript"
-    ]
-  }
+}

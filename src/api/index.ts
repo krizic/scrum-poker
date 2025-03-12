@@ -4,7 +4,48 @@ import { v4 as uuid } from "uuid";
 import { ISessionDb, IEstimation } from "./interfaces";
 import { IUserInfo } from "../services";
 
-export class ApiService {
+export class SessionService {
+  
+}
+
+export interface IApiService<T> {
+  info(): Promise<PouchDB.Core.DatabaseInfo>;
+  post(data: Partial<T>): Promise<PouchDB.Core.Response>;
+  getSession(sessionId: string): Promise<T>;
+  update(document: PouchDB.Core.PutDocument<T>): Promise<PouchDB.Core.Response>;
+  delete(sessionId: string): Promise<PouchDB.Core.Response>;
+  getEstimation(
+    sessionId: string,
+    estimationId: string
+  ): Promise<[IEstimation | undefined, T]>;
+  vote(
+    sessionId: string,
+    estimationId: string,
+    userInfo: IUserInfo,
+    vote?: string
+  ): Promise<void>;
+  importEstimations(
+    sessionId: string,
+    estimations: { [key: string]: IEstimation }
+  ): Promise<PouchDB.Core.Response>;
+  createNewEstimation(
+    document: PouchDB.Core.PutDocument<T>,
+    newEstimation: Partial<IEstimation>
+  ): Promise<PouchDB.Core.Response>;
+  updateEstimation(
+    refDocument: PouchDB.Core.PutDocument<T>,
+    estimation: IEstimation
+  ): Promise<T>;
+  deleteEstimation(
+    refDocument: PouchDB.Core.PutDocument<T>,
+    estimationId: string
+  ): Promise<void>;
+  onChange(
+    callback: (change?: PouchDB.Core.ChangesResponseChange<T>) => any
+  ): void;
+}
+
+export class ApiService implements IApiService<ISessionDb> {
   readonly db_name = "sessions";
   private db: PouchDB.Database<ISessionDb>;
 
