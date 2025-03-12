@@ -10,7 +10,7 @@ import {
   useParams,
 } from 'react-router-dom';
 
-export const timeFormat = (timestamp: number) => {
+export const timeFormat = (timestamp: string) => {
     const t = new Date(timestamp); 
     return `${t.toLocaleDateString()} - ${t.toLocaleTimeString()}`;
 }

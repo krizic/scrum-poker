@@ -4,9 +4,10 @@ import { ResponsivePie, DefaultRawDatum } from "@nivo/pie";
 import "./estimation-chart.scss";
 
 import { IEstimation } from "../../api/interfaces";
+import { EstimationWithVotes } from "../../api";
 
 export interface IEstimationChartProps {
-  estimation: IEstimation;
+  estimation: EstimationWithVotes;
 }
 
 export interface IEstimationChartState {}
@@ -25,10 +26,10 @@ export default class EstimationChart extends React.Component<
 
     this.state = {};
 
-    const pieDataMap = Object.keys(props.estimation.votes).reduce(
+    const pieDataMap = props.estimation.Vote.reduce(
       (acc, current) => {
         const voteValue =
-          this.props.estimation.votes[current].value ?? "no-vote";
+          current.value ?? "no-vote";
 
         const currentPieData = acc.get(voteValue);
 
@@ -52,8 +53,8 @@ export default class EstimationChart extends React.Component<
 
   public render() {
     const component: React.ReactElement =
-      this.props.estimation.votes &&
-      Object.keys(this.props.estimation.votes).length ? (
+      this.props.estimation.Vote &&
+      this.props.estimation.Vote.length ? (
         <Segment className="chart-container">
           <ResponsivePie
             data={this.chartData}

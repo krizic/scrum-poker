@@ -11,29 +11,29 @@ export type Database = {
     Tables: {
       Estimation: {
         Row: {
-          created_at: string
+          created_at: string | null
           description: string | null
           id: string
-          isActive: boolean
-          isEnded: boolean
+          isActive: boolean | null
+          isEnded: boolean | null
           name: string
           session_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           id?: string
-          isActive?: boolean
-          isEnded?: boolean
+          isActive?: boolean | null
+          isEnded?: boolean | null
           name: string
           session_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           id?: string
-          isActive?: boolean
-          isEnded?: boolean
+          isActive?: boolean | null
+          isEnded?: boolean | null
           name?: string
           session_id?: string
         }

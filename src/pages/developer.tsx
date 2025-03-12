@@ -4,7 +4,7 @@ import {IUserInfo, LocalUserInfoApi} from "../services";
 import DevSignIn from "../components/dev-sign-in/dev-sign-in";
 import DevEstimation from "../components/dev-estimation/dev-estimation";
 import {Segment, Loader} from "semantic-ui-react";
-import {ApiService} from "../api";
+// import {ApiService} from "../api/indexold";
 import { WithRoutes, withRouter } from "../utils";
 
 export interface IDeveloperPageProps extends WithRoutes {}
@@ -21,7 +21,7 @@ class DeveloperPage extends React.Component<
 > {
   sessionId: string;
 
-  readonly api: ApiService = ApiService.Instance;
+  readonly api: any = {};
 
   constructor(props: IDeveloperPageProps) {
     super(props);

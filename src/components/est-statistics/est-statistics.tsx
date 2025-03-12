@@ -1,16 +1,16 @@
 import * as React from "react";
-import {Statistic, List} from "semantic-ui-react";
-import {IEstimation} from "../../api/interfaces";
+import { Statistic, List } from "semantic-ui-react";
+import { IEstimation } from "../../api/interfaces";
 
 import "./est-statistics.scss";
+import { Vote } from "../../api/model";
+import { EstimationWithVotes } from "../../api";
 
 export interface IEstimationStatisticsProps {
-  estimation: IEstimation;
+  estimation: EstimationWithVotes;
 }
 
-export default class EstimationStatistics extends React.Component<
-  IEstimationStatisticsProps
-> {
+export default class EstimationStatistics extends React.Component<IEstimationStatisticsProps> {
   estimationAverage: string;
   minMax: string;
   devsVoted: string;
@@ -23,22 +23,22 @@ export default class EstimationStatistics extends React.Component<
     this.estimationAverage = this.getEstimationAverage(this.props.estimation);
   }
 
-  filterInvalidEstimations(estimation: IEstimation): string[] {
-    return Object.keys(estimation.votes ?? {}).filter((current) => {
-      return !isNaN(parseInt(estimation.votes[current].value));
+  filterInvalidEstimations(estimation: EstimationWithVotes): Vote[] {
+    return estimation.Vote.filter((current) => {
+      return !isNaN(parseInt(current.value));
     });
   }
 
-  getDevsVoted(estimation: IEstimation): string {
-    const allDevs: number = Object.keys(estimation.votes ?? {}).length;
+  getDevsVoted(estimation: EstimationWithVotes): string {
+    const allDevs: number = Object.keys(estimation.Vote ?? {}).length;
     const devsVoted: number = this.filterInvalidEstimations(estimation).length;
     return `${devsVoted} / ${allDevs}`;
   }
 
-  getMinMax(estimation: IEstimation): string {
+  getMinMax(estimation: EstimationWithVotes): string {
     const minMax = this.filterInvalidEstimations(estimation).reduce(
       (acc, current) => {
-        const currentValue: number = parseInt(estimation.votes[current].value);
+        const currentValue: number = parseInt(current.value);
         if (acc.min === null || acc.max === null) {
           acc.min = currentValue;
           acc.max = currentValue;
@@ -49,19 +49,21 @@ export default class EstimationStatistics extends React.Component<
 
         return acc;
       },
-      {min: null, max: null}
+      { min: null, max: null }
     );
-    return (minMax.min !== null && minMax.max !== null) ? `${minMax.min} - ${minMax.max}` : 'n/a';
+    return minMax.min !== null && minMax.max !== null
+      ? `${minMax.min} - ${minMax.max}`
+      : "n/a";
   }
 
-  getEstimationAverage(estimation: IEstimation): string {
+  getEstimationAverage(estimation: EstimationWithVotes): string {
     const total = this.filterInvalidEstimations(estimation).reduce(
       (acc, current) => {
-        acc.value = acc.value + parseInt(estimation.votes[current].value);
+        acc.value = acc.value + parseInt(current.value);
         acc.count++;
         return acc;
       },
-      {value: 0, count: 0}
+      { value: 0, count: 0 }
     );
 
     return total.count > 0 ? (total.value / total.count).toFixed(2) : "n/a";

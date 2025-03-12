@@ -1,14 +1,14 @@
 import * as React from "react";
-import {Tab} from "semantic-ui-react";
+import { Tab } from "semantic-ui-react";
 
-import {IEstimation} from "../../api/interfaces";
 import VotesTable from "../votes-table/votes-table";
 
 import "./style.scss";
+import { Estimation } from "../../api/model";
+import { EstimationWithVotes } from "../../api";
 
 export interface IEstimationsProps {
-  estimations: {[key: string]: IEstimation};
-  rev: string;
+  estimationsWithVotes: EstimationWithVotes[];
   id: string;
 }
 
@@ -30,23 +30,20 @@ export default class Estimations extends React.Component<
   }
 
   mapEstimationsToPanes = () => {
-    return Object.keys(this.props.estimations)
+    return this.props.estimationsWithVotes
       .sort((a, b) => {
-        return this.props.estimations[a].timestamp <
-          this.props.estimations[b].timestamp
-          ? 1
-          : -1;
+        return a.created_at < b.created_at ? 1 : -1;
       })
-      .map((estimationKey, index) => {
+      .map((estimation) => {
         return {
-          menuItem: this.props.estimations[estimationKey].isActive
-            ? `${this.props.estimations[estimationKey].name} - Active`
-            : this.props.estimations[estimationKey].name,
+          menuItem: estimation.isActive
+            ? `${estimation.name} - Active`
+            : estimation.name,
           render: () => (
             <Tab.Pane className="tab-container">
-              <VotesTable key={estimationKey}
-                documentRef={{_rev: this.props.rev, _id: this.props.id}}
-                estimation={this.props.estimations[estimationKey]}
+              <VotesTable
+                key={estimation.id}
+                estimationWithVotes={estimation}
               ></VotesTable>
             </Tab.Pane>
           ),
@@ -57,7 +54,12 @@ export default class Estimations extends React.Component<
   public render() {
     return (
       <Tab
-        menu={{pointing: true, renderActiveOnly:false, fluid: true, vertical: true}}
+        menu={{
+          pointing: true,
+          renderActiveOnly: false,
+          fluid: true,
+          vertical: true,
+        }}
         panes={this.mapEstimationsToPanes()}
       />
     );

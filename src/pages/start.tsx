@@ -9,21 +9,21 @@ import {
   Header,
 } from "semantic-ui-react";
 
-import { ApiService } from "../api";
 import "./start.scss";
 import {
   LocalSessionApi,
-  ISessionAccess,
 } from "../services/local-session-storage";
 import { WithRoutes, timeFormat, withRouter } from "../utils";
 import { AppPath } from "../App";
+import { SessionService } from "../api";
+import { Session } from "../api/model";
 
 export interface IStartProps extends WithRoutes {}
 
 export interface IStartState {
   form: IForm;
   valid?: IForm;
-  previousSessions: ISessionAccess[] | null;
+  previousSessions: Session[] | null;
 }
 
 interface IForm {
@@ -38,7 +38,8 @@ enum FormField {
 }
 
 class Start extends React.Component<IStartProps, IStartState> {
-  api: ApiService = ApiService.Instance;
+  // api: ApiService = ApiService.Instance;
+  sessionService = new SessionService();
 
   state: IStartState = {
     form: {
@@ -50,27 +51,20 @@ class Start extends React.Component<IStartProps, IStartState> {
   };
 
   componentDidMount() {
-    this.api.info().then((data) => {
-      console.log("info", data);
+    this.sessionService.status().then((status) => {
+      console.log("SupaBase - status", status);
     });
   }
 
   onFormSubmit = (formData: IForm) => {
     if (formData.session_name !== "") {
-      const newSession = {
-        ...formData,
-        ...{ created_at: new Date().getTime() },
+      const newSession: Partial<Session> = {
+        name: formData.session_name,
+        pin: formData.session_pin,
       };
-      this.api.post(newSession).then((response) => {
-        if (response.ok) {
-          LocalSessionApi.saveSession({
-            _id: response.id,
-            session_name: formData.session_name,
-            session_pin: formData.session_pin,
-            created_at: newSession.created_at,
-          });
-          this.props.router.navigate(`${AppPath.Po}?id=${response.id}`);
-        }
+      this.sessionService.create(newSession).then((response) => {
+        LocalSessionApi.saveSession(response);
+        this.props.router.navigate(`${AppPath.Po}?id=${response.id}`);
       });
     }
   };
@@ -86,7 +80,7 @@ class Start extends React.Component<IStartProps, IStartState> {
 
   onPreviousSessionDelete = (event: React.MouseEvent, sessionId: string) => {
     event.stopPropagation();
-    this.api.delete(sessionId).finally(() => {
+    this.sessionService.delete(sessionId).then(() => {
       LocalSessionApi.deleteSession(sessionId);
       this.setState({ previousSessions: LocalSessionApi.getSessions() });
     });
@@ -146,16 +140,16 @@ class Start extends React.Component<IStartProps, IStartState> {
                     return (
                       <List.Item
                         as="a"
-                        key={session._id}
+                        key={session.id}
                         onClick={() => {
-                          this.onSessionLinkClick(session._id);
+                          this.onSessionLinkClick(session.id);
                         }}
                       >
                         <List.Content floated="right">
                           <Button
                             icon="times circle outline"
                             onClick={(e) => {
-                              this.onPreviousSessionDelete(e, session._id);
+                              // this.onPreviousSessionDelete(e, session._id);
                             }}
                           ></Button>
                         </List.Content>
@@ -164,7 +158,7 @@ class Start extends React.Component<IStartProps, IStartState> {
                           verticalAlign="middle"
                         />
                         <List.Content>
-                          <List.Header>{session.session_name}</List.Header>
+                          <List.Header>{session.name}</List.Header>
                           <List.Description>
                             {timeFormat(session.created_at)}
                           </List.Description>

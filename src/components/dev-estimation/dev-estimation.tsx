@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ApiService } from "../../api";
+// import { ApiService } from "../../api/indexold";
 import { IEstimation } from "../../api/interfaces";
 import { Segment, Divider } from "semantic-ui-react";
 import { IUserInfo } from "../../services";
@@ -23,7 +23,7 @@ export default class DevEstimation extends React.Component<
   IDevEstimationProps,
   IDevEstimationState
 > {
-  readonly api: ApiService = ApiService.Instance;
+  readonly api: any = {};
   readonly cardValues: string[] = [
     "0",
     "1",

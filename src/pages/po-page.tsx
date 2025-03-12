@@ -1,15 +1,15 @@
 import * as React from "react";
-import {Button, Segment, Form, Icon} from "semantic-ui-react";
-import {toast, ToastContainer} from "react-toastify";
+import { Button, Segment, Form, Icon } from "semantic-ui-react";
+import { toast, ToastContainer } from "react-toastify";
 import Papa from "papaparse";
-import {v4 as uuid} from "uuid";
 
 import "./po-page.scss";
-import {ISessionDb, IEstimation} from "../api/interfaces";
-import {ApiService} from "../api";
+// import {ApiService} from "../api/indexold";
 import Estimations from "../components/estimations/estimations";
-import {ImportZone} from "../components/import-zone/import-zone";
+import { ImportZone } from "../components/import-zone/import-zone";
 import { WithRoutes, withRouter } from "../utils";
+import { EstimationService, EstimationWithVotes, SessionService } from "../api";
+import { Estimation, Session } from "../api/model";
 
 interface IEstimationForm {
   estimation_name: string;
@@ -19,12 +19,14 @@ interface IEstimationForm {
 export interface IPoPageProps extends WithRoutes {}
 
 export interface IPoPageState {
-  session?: PouchDB.Core.Document<ISessionDb> & PouchDB.Core.GetMeta;
+  session?: Session;
+  estimations?: EstimationWithVotes[];
   estimationForm?: Partial<IEstimationForm>;
 }
 
 class PoPage extends React.Component<IPoPageProps, IPoPageState> {
-  readonly api: ApiService = ApiService.Instance;
+  sessionService = new SessionService();
+  estimationService = new EstimationService();
   sessionId: string | null;
 
   constructor(props: IPoPageProps) {
@@ -38,15 +40,27 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   componentDidMount() {
     if (this.sessionId) {
       this.getSession();
-      this.api.onChange(this.getSession);
+      this.getEstimations();
+      this.estimationService
+        .changes("session_id", this.sessionId, (payload) => {
+          debugger;
+          this.getEstimations();
+        })
+        .subscribe();
     } else {
       // redirect him
     }
   }
 
   getSession = () => {
-    this.api.getSession(this.sessionId!).then((session) => {
-      this.setState({session: session});
+    this.sessionService.get(this.sessionId!).then((session) => {
+      this.setState({ session: session });
+    });
+  };
+
+  getEstimations = () => {
+    this.estimationService.getWithVotes(this.sessionId!).then((estimations) => {
+      this.setState({ estimations: estimations });
     });
   };
 
@@ -57,21 +71,18 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   ) => {
     const estimationForm = {
       ...this.state.estimationForm,
-      ...{[event.currentTarget.name]: event.currentTarget.value},
+      ...{ [event.currentTarget.name]: event.currentTarget.value },
     };
 
-    this.setState({estimationForm});
+    this.setState({ estimationForm });
   };
 
   onEstimationFormSubmit = (form?: Partial<IEstimationForm>) => {
     if (form && form.estimation_name) {
-      this.api.createNewEstimation(this.state.session!, {
+      this.estimationService.create({
         name: form.estimation_name,
         description: form.estimation_description,
-        timestamp: new Date().getTime(),
-        isActive: false,
-        isEnded: false,
-        votes: {},
+        session_id: this.sessionId!,
       });
     }
   };
@@ -102,7 +113,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
 
               return acc;
             },
-            {issueKey: 0, description: 0}
+            { issueKey: 0, description: 0 }
           );
 
           const valuesArray = results.data.filter(
@@ -111,29 +122,23 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
             }
           );
 
-          const importedEstimations: {
-            [key: string]: IEstimation;
-          } | {} = valuesArray.length ? valuesArray.reduce(
-            (acc: {[key: string]: Partial<IEstimation>}, current: string[]) => {
-              const estimationId = uuid();
-              acc[estimationId] = {
-                id: estimationId,
-                name: current[fields.issueKey],
-                description: current[fields.description],
-                votes: {},
-              };
+          const importedEstimations: Estimation[] = valuesArray.length
+            ? valuesArray.map((current: string[]) => {
+                return {
+                  name: current[fields.issueKey],
+                  description: current[fields.description],
+                  session_id: this.sessionId!,
+                } as Estimation;
+              })
+            : undefined;
 
-              return acc;
-            },
-            {} as {[key: string]: IEstimation}
-          ):  undefined;
-
-          this.api
-            .importEstimations(this.sessionId, importedEstimations)
+          this.estimationService
+            .bulkCreate(importedEstimations)
             .then((response) => {
+              console.log("estimationService.bulkCreate", response);
             });
         } else {
-          // error information with toaster;
+          throw new Error("Error parsing file");
         }
       },
     });
@@ -148,14 +153,13 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   };
 
   public render() {
+    const { session, estimations } = this.state;
     const hasEstimations: boolean =
-      this.state.session?.estimations &&
-      !!Object.keys(this.state.session?.estimations).length;
+      session && estimations && estimations?.length > 0;
     const estimationsComponent = hasEstimations ? (
       <Estimations
-        rev={this.state.session._rev}
-        id={this.state.session._id}
-        estimations={this.state.session?.estimations}
+        id={this.state.session.id}
+        estimationsWithVotes={estimations}
       ></Estimations>
     ) : (
       <h4> No Estimations</h4>
@@ -166,7 +170,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
         <div className="wrapper">
           <Segment.Group>
             <Segment secondary clearing className="session-header">
-              Session: {this.state.session?.session_name}
+              Session: {this.state.session?.name}
               <Button
                 onClick={this.onCopyButtonClick}
                 color="blue"

@@ -1,3 +1,5 @@
+import { Session } from "../api/model";
+
 export interface ISessionAccess {
   _id: string;
   session_name: string;
@@ -7,13 +9,10 @@ export interface ISessionAccess {
 
 const sessionKey = "sp_sessions";
 
-export class UserSessionApi {
-
-}
-
+export class UserSessionApi {}
 
 export class LocalSessionApi {
-  static saveSession(session: ISessionAccess) {
+  static saveSession(session: Session) {
     let currentSessions = this.getSessions();
     localStorage.setItem(
       sessionKey,
@@ -23,7 +22,7 @@ export class LocalSessionApi {
     );
   }
 
-  static getSessions(): ISessionAccess[] | null {
+  static getSessions(): Session[] | null {
     const sessionsString = localStorage.getItem(sessionKey);
     return sessionsString ? JSON.parse(sessionsString) : null;
   }
@@ -32,19 +31,19 @@ export class LocalSessionApi {
     let sessions = this.getSessions();
     if (sessions && sessions.length) {
       sessions = sessions.filter((session) => {
-        return session._id !== sessionId;
+        return session.id !== sessionId;
       });
       localStorage.setItem(sessionKey, JSON.stringify(sessions));
     }
   }
 
-  static getSession(sessionId: string): ISessionAccess | null {
+  static getSession(sessionId: string): Session | null {
     const sessions = this.getSessions();
-    let result: ISessionAccess | null = null;
+    let result: Session | null = null;
     if (sessions && sessions.length) {
       result =
         sessions.filter((session) => {
-          return session._id === sessionId;
+          return session.id === sessionId;
         })[0] || null;
     }
     return result;
