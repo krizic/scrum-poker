@@ -13,22 +13,61 @@ import CardReveal from "../card-reveal/card-reveal";
 import EstimationChart from "../estimation-chart/estimation-chart";
 import EstimationStatistics from "../est-statistics/est-statistics";
 import { EstimationService, EstimationWithVotes, VoteService } from "../../api";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface IVotesTableProps {
-  estimationWithVotes: EstimationWithVotes;
+  estimationId: string;
 }
 
-export default class VotesTable extends React.Component<IVotesTableProps> {
+export interface IVotesTableState {
+  estimationWithVotes?: EstimationWithVotes;
+}
+
+export default class VotesTable extends React.Component<
+  IVotesTableProps,
+  IVotesTableState
+> {
   voteService = new VoteService();
   estimationService = new EstimationService();
+  subscriptions: RealtimeChannel[] = [];
 
   constructor(props: IVotesTableProps) {
     super(props);
     this.state = {};
   }
 
+  componentDidMount() {
+    this.getEstimation();
+
+    this.subscriptions.push(
+      this.voteService
+        .changes("estimation_id", this.props.estimationId, this.getEstimation)
+        .subscribe()
+    );
+
+    this.subscriptions.push(
+      this.estimationService
+        .changes("id", this.props.estimationId, this.getEstimation)
+        .subscribe()
+    );
+  }
+
+  componentWillUnmount(): void {
+    this.subscriptions.forEach((sub) => {
+      sub.unsubscribe();
+    });
+  }
+
+  getEstimation = () => {
+    this.estimationService
+      .getOneWithVotes(this.props.estimationId)
+      .then((estimation) => {
+        this.setState({ estimationWithVotes: estimation });
+      });
+  }
+
   onToggleVoteClick = (event: React.MouseEvent, active: boolean) => {
-    const { estimationWithVotes } = this.props;
+    const { estimationWithVotes } = this.state;
     this.estimationService.changeEstimationStatus(
       estimationWithVotes.session_id,
       estimationWithVotes.id!,
@@ -37,11 +76,11 @@ export default class VotesTable extends React.Component<IVotesTableProps> {
   };
 
   onDeleteClick = (e: React.MouseEvent) => {
-    this.estimationService.delete(this.props.estimationWithVotes.id!);
+    this.estimationService.setAsDeleted(this.props.estimationId);
   };
 
   public render() {
-    const { estimationWithVotes } = this.props;
+    const { estimationWithVotes } = this.state;
     return estimationWithVotes ? (
       <div className="votes-table">
         <SegmentGroup>
@@ -80,7 +119,7 @@ export default class VotesTable extends React.Component<IVotesTableProps> {
             </Segment>
           )}
           {!estimationWithVotes.isActive &&
-            !!estimationWithVotes.Vote.length && (
+            !!estimationWithVotes.Vote?.length && (
               <Segment.Group horizontal>
                 <Segment>
                   <EstimationStatistics
@@ -98,7 +137,7 @@ export default class VotesTable extends React.Component<IVotesTableProps> {
               There are no votes for this story.
             </Message>
           )}
-          {estimationWithVotes.Vote?.length && (
+          {estimationWithVotes.Vote?.length > 0 && (
             <Segment>
               <div className="votes-table__cards">
                 {estimationWithVotes.Vote.map((vote) => {

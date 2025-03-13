@@ -4,12 +4,12 @@ import { toast, ToastContainer } from "react-toastify";
 import Papa from "papaparse";
 
 import "./po-page.scss";
-// import {ApiService} from "../api/indexold";
 import Estimations from "../components/estimations/estimations";
 import { ImportZone } from "../components/import-zone/import-zone";
 import { WithRoutes, withRouter } from "../utils";
 import { EstimationService, EstimationWithVotes, SessionService } from "../api";
 import { Estimation, Session } from "../api/model";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 interface IEstimationForm {
   estimation_name: string;
@@ -20,7 +20,7 @@ export interface IPoPageProps extends WithRoutes {}
 
 export interface IPoPageState {
   session?: Session;
-  estimations?: EstimationWithVotes[];
+  estimations?: Estimation[];
   estimationForm?: Partial<IEstimationForm>;
 }
 
@@ -28,6 +28,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   sessionService = new SessionService();
   estimationService = new EstimationService();
   sessionId: string | null;
+  subs: RealtimeChannel[] = [];
 
   constructor(props: IPoPageProps) {
     super(props);
@@ -41,15 +42,20 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
     if (this.sessionId) {
       this.getSession();
       this.getEstimations();
-      this.estimationService
-        .changes("session_id", this.sessionId, (payload) => {
-          debugger;
-          this.getEstimations();
-        })
-        .subscribe();
+      this.subs.push(
+        this.estimationService
+          .changes("session_id", this.sessionId, this.getEstimations)
+          .subscribe()
+      );
     } else {
       // redirect him
     }
+  }
+
+  componentWillUnmount(): void {
+    this.subs.forEach((sub) => {
+      sub.unsubscribe();
+    });
   }
 
   getSession = () => {
@@ -59,9 +65,12 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
   };
 
   getEstimations = () => {
-    this.estimationService.getWithVotes(this.sessionId!).then((estimations) => {
-      this.setState({ estimations: estimations });
-    });
+    this.estimationService
+      .getBySessionId(this.sessionId!)
+      .then((estimations) => {
+        this.setState({ estimations: estimations });
+        debugger;
+      });
   };
 
   onEstimationFormInputChange = (
@@ -95,7 +104,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
     this.importEstimationsFromFile(acceptedFiles[0]);
   };
 
-  importEstimationsFromFile(file: File) {
+  importEstimationsFromFile = (file: File) => {
     Papa.parse(file, {
       complete: (results) => {
         console.log(results);
@@ -142,7 +151,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
         }
       },
     });
-  }
+  };
 
   onCopyButtonClick = () => {
     const devSessionUrl = `${window.location.origin}/dev?id=${this.sessionId}`;
@@ -159,7 +168,7 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
     const estimationsComponent = hasEstimations ? (
       <Estimations
         id={this.state.session.id}
-        estimationsWithVotes={estimations}
+        estimations={estimations}
       ></Estimations>
     ) : (
       <h4> No Estimations</h4>

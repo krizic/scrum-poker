@@ -9,18 +9,19 @@ import {
   Grid,
   Header,
 } from "semantic-ui-react";
-import {v4 as uuid} from "uuid";
+import { v4 as uuid } from "uuid";
 
-import {IUserInfo, LocalUserInfoApi} from "../../services";
+import { LocalUserInfoApi } from "../../services";
 import PokerCard from "../poker-card/poker-card";
+import { Player } from "../../api/model";
 
 export interface IDevSignInProps {
-  onUserSign: (userInfo: IUserInfo) => any;
+  onUserSign: (userInfo: Player) => any;
 }
 
 export interface IDevSignInState {
-  userInfoForm: IUserInfo;
-  userInfo?: IUserInfo;
+  userInfoForm: Partial<Player>;
+  userInfo?: Player;
 }
 
 export default class DevSignIn extends React.Component<
@@ -42,76 +43,75 @@ export default class DevSignIn extends React.Component<
       key: "1267",
       text: "Pink-Yellow",
       value: "1267",
-      image: {src: "/patterns/1267.png"},
+      image: { src: "/patterns/1267.png" },
     },
     {
       key: "2109",
       text: "Red-Cream",
       value: "2109",
-      image: {src: "/patterns/2109.png"},
+      image: { src: "/patterns/2109.png" },
     },
     {
       key: "9248",
       text: "Blue-Cream",
       value: "9248",
-      image: {src: "/patterns/9248.png"},
+      image: { src: "/patterns/9248.png" },
     },
     {
       key: "10680",
       text: "BW-Red",
       value: "10680",
-      image: {src: "/patterns/10680.png"},
+      image: { src: "/patterns/10680.png" },
     },
     {
       key: "18242",
       text: "Yellow-Cream",
       value: "18242",
-      image: {src: "/patterns/18242.png"},
+      image: { src: "/patterns/18242.png" },
     },
     {
       key: "8126",
       text: "Red-Blue",
       value: "8126",
-      image: {src: "/patterns/8126.png"},
+      image: { src: "/patterns/8126.png" },
     },
   ];
 
   onUserInfoFormSubmit = () => {
     const userInfo = {
       ...this.state.userInfoForm,
-      id: uuid(),
     };
     LocalUserInfoApi.saveUserInfo(userInfo);
-    this.props.onUserSign(userInfo);
+    this.props.onUserSign(userInfo as Player);
   };
 
   onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const userInfoForm: IUserInfo = {
+    const userInfoForm: Partial<Player> = {
       ...this.state.userInfoForm,
-      ...{[event.currentTarget.name]: event.currentTarget.value},
+      ...{ [event.currentTarget.name]: event.currentTarget.value },
     };
-    this.setState({userInfoForm});
+    this.setState({ userInfoForm });
   };
 
   onSelectChange = (
     event: React.SyntheticEvent<HTMLElement, Event>,
     data: DropdownProps
   ) => {
-    const userInfoForm: IUserInfo = {
+    const userInfoForm: Partial<Player> = {
       ...this.state.userInfoForm,
-      ...{pattern: data.value as string},
+      ...{ pattern: data.value as string },
     };
 
-    this.setState({userInfoForm});
+    this.setState({ userInfoForm });
   };
 
   public render() {
     return (
-      <Segment raised className="form-wrapper">    
+      <Segment raised className="form-wrapper">
         <Grid stackable>
           <Grid.Row verticalAlign="middle">
             <Grid.Column width={10}>
-            <Header textAlign="center">Developer Info</Header>
+              <Header textAlign="center">Developer Info</Header>
               <Form onSubmit={this.onUserInfoFormSubmit}>
                 <Form.Input
                   required
@@ -158,7 +158,7 @@ export default class DevSignIn extends React.Component<
                 voterEmail={this.state.userInfoForm.email}
                 withProfilePic={true}
               >
-                <div>{this.state.userInfoForm.username ?? "Unknown"}</div>
+                <div>{this.state.userInfoForm.username ?? ""}</div>
               </PokerCard>
             </Grid.Column>
           </Grid.Row>

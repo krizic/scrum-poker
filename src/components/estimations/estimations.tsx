@@ -5,10 +5,9 @@ import VotesTable from "../votes-table/votes-table";
 
 import "./style.scss";
 import { Estimation } from "../../api/model";
-import { EstimationWithVotes } from "../../api";
 
 export interface IEstimationsProps {
-  estimationsWithVotes: EstimationWithVotes[];
+  estimations: Estimation[];
   id: string;
 }
 
@@ -30,7 +29,7 @@ export default class Estimations extends React.Component<
   }
 
   mapEstimationsToPanes = () => {
-    return this.props.estimationsWithVotes
+    return this.props.estimations
       .sort((a, b) => {
         return a.created_at < b.created_at ? 1 : -1;
       })
@@ -43,7 +42,7 @@ export default class Estimations extends React.Component<
             <Tab.Pane className="tab-container">
               <VotesTable
                 key={estimation.id}
-                estimationWithVotes={estimation}
+                estimationId={estimation.id}
               ></VotesTable>
             </Tab.Pane>
           ),

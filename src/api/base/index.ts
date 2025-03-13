@@ -36,6 +36,10 @@ export abstract class BaseApi<
     return data as T;
   }
 
+  /**
+   * Does not provide reactivity, extend with isDeleted property
+   * @param id 
+   */
   async delete(id: string) {
     const { error } = await this.table.delete().eq("id", id as any);
     if (error) {

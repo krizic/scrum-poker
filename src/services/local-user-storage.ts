@@ -1,18 +1,15 @@
-export interface IUserInfo {
+export interface LocalUser {
   id?: string;
-  username?: string;
-  email?: string;
-  pattern?: string;
 }
 
 const userInfoKey = "sp_user";
 
 export class LocalUserInfoApi {
-  static saveUserInfo(userInfo: IUserInfo) {
+  static saveUserInfo(userInfo: LocalUser): void {
     localStorage.setItem(userInfoKey, JSON.stringify(userInfo));
   }
 
-  static getUserInfo(): IUserInfo | null {
+  static getUserInfo(): LocalUser | null {
     const userInfoValue = localStorage.getItem(userInfoKey);
 
     if (userInfoValue) {

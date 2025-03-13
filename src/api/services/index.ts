@@ -1,6 +1,6 @@
 import { supabase } from "../provider";
 import { BaseApi } from "../base";
-import { Estimation, Session, Vote } from "../model";
+import { Estimation, Player, Session, Vote } from "../model";
 import { QueryData } from "@supabase/supabase-js";
 
 export class SessionService extends BaseApi<Session, "Session"> {
@@ -68,13 +68,28 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
     return data as Estimation[];
   };
 
+  setAsDeleted = async (id: string): Promise<Estimation> => {
+    const { data, error } = await this.table
+      .update({ isDeleted: true })
+      .eq("id", id)
+      .single();
+    if (error) {
+      throw error;
+    }
+    return data;
+  };
+
   changeEstimationStatus = async (
     session_id: string,
     estimationId: string,
     isActive: boolean
   ): Promise<Estimation> => {
-    const estimations = await this.getBySessionId(session_id);
+    const estimationResponse = await this.getBySessionId(session_id);
     const forUpdate: Estimation[] = [];
+
+    const estimations = Array.isArray(estimationResponse)
+      ? estimationResponse
+      : [estimationResponse];
 
     estimations.forEach((estimation) => {
       if (estimation.isActive) {
@@ -95,7 +110,8 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
   getBySessionId = async (sessionId: string): Promise<Estimation[]> => {
     const { data, error } = await this.table
       .select()
-      .eq("session_id", sessionId);
+      .eq("session_id", sessionId)
+      .eq("isDeleted", false);
     if (error) {
       throw error;
     }
@@ -120,6 +136,7 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
         `
       )
       .eq("isActive", true)
+      .eq("isDeleted", false)
       .eq("session_id", sessionId)
       .eq("Vote.Player.id", playerId)
       .single();
@@ -133,7 +150,9 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
     return data;
   };
 
-  getWithVotes = async (id: string): Promise<EstimationWithVotes[]> => {
+  getPerSessionWithVotes = async (
+    sessionId: string
+  ): Promise<EstimationWithVotes[]> => {
     const estimationWithVotes = await this.table
       .select(
         `*, 
@@ -147,7 +166,34 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
         )
         `
       )
-      .eq("session_id", id);
+      .eq("isDeleted", false)
+      .eq("session_id", sessionId);
+
+    const { data, error } = await estimationWithVotes;
+
+    if (error) {
+      throw error;
+    }
+    return data;
+  };
+
+  getOneWithVotes = async (id: string): Promise<EstimationWithVotes> => {
+    const estimationWithVotes = await this.table
+      .select(
+        `*, 
+        Vote (
+          id,
+          value,
+          created_at,
+          estimation_id,
+          player_id,
+          Player(*)
+        )
+        `
+      )
+      .eq("isDeleted", false)
+      .eq("id", id)
+      .single();
 
     const { data, error } = await estimationWithVotes;
 
@@ -160,5 +206,19 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
 export class VoteService extends BaseApi<Vote, "Vote"> {
   constructor() {
     super(supabase, "Vote");
+  }
+
+  upsert = async (vote: Partial<Vote>): Promise<Vote> => {
+    const { data, error } = await this.table.upsert([vote]);
+    if (error) {
+      throw error;
+    }
+    return data[0];
+  };
+}
+
+export class PlayerService extends BaseApi<Player, "Player"> {
+  constructor() {
+    super(supabase, "Player");
   }
 }

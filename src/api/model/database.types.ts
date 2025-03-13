@@ -15,6 +15,7 @@ export type Database = {
           description: string | null
           id: string
           isActive: boolean | null
+          isDeleted: boolean
           isEnded: boolean | null
           name: string
           session_id: string
@@ -24,6 +25,7 @@ export type Database = {
           description?: string | null
           id?: string
           isActive?: boolean | null
+          isDeleted?: boolean
           isEnded?: boolean | null
           name: string
           session_id: string
@@ -33,6 +35,7 @@ export type Database = {
           description?: string | null
           id?: string
           isActive?: boolean | null
+          isDeleted?: boolean
           isEnded?: boolean | null
           name?: string
           session_id?: string
