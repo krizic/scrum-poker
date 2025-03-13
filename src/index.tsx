@@ -1,7 +1,5 @@
-import React from "react";
-import ReactDOM from "react-dom";
-// import trianglify from "trianglify";
-import * as Sentry from "@sentry/react";
+import { createRoot } from "react-dom/client";
+// import * as Sentry from "@sentry/react";
 
 import * as serviceWorker from "./serviceWorker";
 import App from "./App";
@@ -9,14 +7,18 @@ import App from "./App";
 import "semantic-ui-css/semantic.min.css";
 import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
+import React from "react";
 
-Sentry.init({
-  dsn: `${process.env.REACT_APP_SENTRY}`,
-  integrations: [new Sentry.BrowserTracing()],
-  tracesSampleRate: 1.0,
-});
+// console.log("ENV", import.meta.env);
+// Sentry.init({
+//   dsn: `${import.meta.env.VITE_SENTRY}`,
+//   integrations: [new Sentry.BrowserTracing()],
+//   tracesSampleRate: 1.0,
+// });
 
-ReactDOM.render(<App />, document.getElementById("root"));
+const container = document.getElementById("root");
+const root = createRoot(container); // createRoot(container!) if you use TypeScript
+root.render(<App />);
 
 // var pattern = trianglify({
 //   width: window.innerWidth,

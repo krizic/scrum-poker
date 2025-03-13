@@ -1,8 +1,8 @@
 import * as React from "react";
-import {Reveal} from "semantic-ui-react";
-import PokerCard from "../poker-card/poker-card";
+import { Reveal } from "semantic-ui-react";
 
-import style from "./style.module.scss";
+import PokerCard from "../poker-card/poker-card";
+import "./card-reveal.scss";
 import { Vote } from "../../api/model";
 
 export interface ICardRevealProps {
@@ -18,11 +18,11 @@ export default class CardReveal extends React.Component<ICardRevealProps> {
         disabled={this.props.shouldHide}
         active={!this.props.shouldHide}
         animated="move"
-        style={{pointerEvents: "none"}}
-        className={style.container}
+        style={{ pointerEvents: "none" }}
+        className={"card-reveal-container"}
         instant={this.props.shouldHide}
       >
-        <Reveal.Content style={{lineHeight: 0}} visible>
+        <Reveal.Content style={{ lineHeight: 0 }} visible>
           <PokerCard
             withProfilePic
             side="back"
@@ -34,13 +34,15 @@ export default class CardReveal extends React.Component<ICardRevealProps> {
             <div>{this.props.vote.username}</div>
           </PokerCard>
         </Reveal.Content>
-        <Reveal.Content style={{lineHeight: 0}} hidden>
+        <Reveal.Content style={{ lineHeight: 0 }} hidden>
           <PokerCard
             withProfilePic
             side="front"
             voterEmail={this.props.vote.email}
             voterUsername={this.props.vote.username}
-            voteValue={this.props.shouldHide ? "?" : this.props.vote.value ?? "-"}
+            voteValue={
+              this.props.shouldHide ? "?" : this.props.vote.value ?? "-"
+            }
           ></PokerCard>
         </Reveal.Content>
       </Reveal>

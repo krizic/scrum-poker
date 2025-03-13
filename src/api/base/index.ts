@@ -6,18 +6,19 @@ export abstract class BaseApi<
   T extends { id: string },
   N extends AvailableTables = AvailableTables
 > {
+  protected table: ReturnType<SupabaseClient<Database, "public">["from"]>;
+
   constructor(
     protected store: SupabaseClient<Database, "public">,
     private tableName: N
-  ) {}
-
-  protected table = this.store.from(this.tableName);
+  ) {
+    this.table = this.store.from(this.tableName);
+  }
 
   async create(createData): Promise<T> {
     const { data, error } = await this.table
       .insert(createData)
-      .select()
-      .overrideTypes<T>();
+      .select();
     if (error) {
       throw error;
     }
@@ -28,8 +29,7 @@ export abstract class BaseApi<
     const { data, error } = await this.table
       .select()
       .eq("id", id as any)
-      .single()
-      .overrideTypes<T>();
+      .single();
     if (error) {
       throw error;
     }
@@ -47,8 +47,7 @@ export abstract class BaseApi<
     const { data, error } = await this.table
       .update(updateData)
       .eq("id", id as any)
-      .single()
-      .overrideTypes<T>();
+      .single();
     if (error) {
       throw error;
     }
