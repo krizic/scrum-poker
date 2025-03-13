@@ -1,17 +1,20 @@
 import * as React from "react";
 import "./developer.scss";
-import {IUserInfo, LocalUserInfoApi} from "../services";
+import { IUserInfo, LocalUserInfoApi } from "../services";
 import DevSignIn from "../components/dev-sign-in/dev-sign-in";
 import DevEstimation from "../components/dev-estimation/dev-estimation";
-import {Segment, Loader} from "semantic-ui-react";
+import { Segment, Loader } from "semantic-ui-react";
 // import {ApiService} from "../api/indexold";
 import { WithRoutes, withRouter } from "../utils";
+import { SessionService } from "../api";
+import { Session } from "../api/model";
 
 export interface IDeveloperPageProps extends WithRoutes {}
 
 export interface IDeveloperPageState {
   userInfo?: IUserInfo;
   sessionValid?: boolean;
+  session?: Session;
   initialLoad?: boolean;
 }
 
@@ -20,42 +23,47 @@ class DeveloperPage extends React.Component<
   IDeveloperPageState
 > {
   sessionId: string;
-
-  readonly api: any = {};
+  sessionService = new SessionService();
 
   constructor(props: IDeveloperPageProps) {
     super(props);
 
     const params = new URLSearchParams(this.props.router.location.search);
     this.sessionId = params.get("id");
-    this.state = {userInfo: LocalUserInfoApi.getUserInfo() || undefined};
+    this.state = { userInfo: LocalUserInfoApi.getUserInfo() || undefined };
   }
 
   componentDidMount() {
     if (this.sessionId) {
-      this.api
-        .getSession(this.sessionId)
-        .then((response) => {
-          this.setState({sessionValid: true});
+      this.sessionService
+        .get(this.sessionId)
+        .then((sessionResponse) => {
+          this.setState({
+            sessionValid: sessionResponse?.id === this.sessionId,
+            session: sessionResponse,
+          });
         })
         .catch((error) => {
-          this.setState({sessionValid: false});
+          this.setState({ sessionValid: false });
         })
         .finally(() => {
-          this.setState({initialLoad: true});
+          this.setState({ initialLoad: true });
         });
     }
   }
 
   onUserSignIn = (userInfo: IUserInfo) => {
-    this.setState({userInfo});
+    this.setState({ userInfo });
   };
 
   public render() {
     const main =
       this.sessionId && this.state.sessionValid ? (
         this.state.userInfo ? (
-          <DevEstimation userInfo={this.state.userInfo} sessionId={this.sessionId}></DevEstimation>
+          <DevEstimation
+            userInfo={this.state.userInfo}
+            session={this.state.session}
+          ></DevEstimation>
         ) : (
           <DevSignIn onUserSign={this.onUserSignIn}></DevSignIn>
         )

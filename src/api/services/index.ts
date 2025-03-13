@@ -24,18 +24,36 @@ const _estimationWithVotes = supabase
     `*, 
   Vote (
     id,
-    pattern,
-    username,
-    email,
     value,
     created_at,
-    estimation_id
+    estimation_id,
+    player_id,
+    Player(*)
   )
   `
   )
   .single();
-
 export type EstimationWithVotes = QueryData<typeof _estimationWithVotes>;
+
+const _estimationWithPlayerVote = supabase
+  .from("Estimation")
+  .select(
+    `*, 
+  Vote (
+    id,
+    value,
+    created_at,
+    estimation_id,
+    player_id,
+    Player (*)
+    )
+  `
+  )
+  .single();
+
+export type EstimationWithPlayerVote = QueryData<
+  typeof _estimationWithPlayerVote
+>;
 
 export class EstimationService extends BaseApi<Estimation, "Estimation"> {
   constructor() {
@@ -56,19 +74,18 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
     isActive: boolean
   ): Promise<Estimation> => {
     const estimations = await this.getBySessionId(session_id);
-    const estimationsWithUpdatedStatus = estimations.map((estimation) => {
+    const forUpdate: Estimation[] = [];
+
+    estimations.forEach((estimation) => {
       if (estimation.isActive) {
-        return { ...estimation, isActive: false };
+        forUpdate.push({ ...estimation, isActive: false });
       }
-      if (estimation.id === estimationId) {
-        return { ...estimation, isActive };
+      if (estimation.id === estimationId && !estimation.isActive) {
+        forUpdate.push({ ...estimation, isActive });
       }
-      return estimation;
     });
 
-    const { data, error } = await this.table.upsert(
-      estimationsWithUpdatedStatus
-    );
+    const { data, error } = await this.table.upsert(forUpdate);
     if (error) {
       throw error;
     }
@@ -85,18 +102,48 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
     return data;
   };
 
+  getActiveEstimationWithPlayerVote = async (
+    sessionId: string,
+    playerId: string
+  ): Promise<EstimationWithPlayerVote | null> => {
+    const estimationWithVotes = await this.table
+      .select(
+        `*, 
+        Vote (
+          id,
+          value,
+          created_at,
+          estimation_id,
+          player_id,
+          Player (*)
+          )
+        `
+      )
+      .eq("isActive", true)
+      .eq("session_id", sessionId)
+      .eq("Vote.Player.id", playerId)
+      .single();
+
+    const { data, error } = await estimationWithVotes;
+
+    if (error) {
+      // throw error;
+      return null;
+    }
+    return data;
+  };
+
   getWithVotes = async (id: string): Promise<EstimationWithVotes[]> => {
     const estimationWithVotes = await this.table
       .select(
         `*, 
         Vote (
           id,
-          pattern,
-          username,
-          email,
           value,
           created_at,
-          estimation_id
+          estimation_id,
+          player_id,
+          Player(*)
         )
         `
       )

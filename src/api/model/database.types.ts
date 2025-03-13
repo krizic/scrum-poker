@@ -47,6 +47,30 @@ export type Database = {
           },
         ]
       }
+      Player: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          pattern: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          pattern: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          pattern?: string
+          username?: string
+        }
+        Relationships: []
+      }
       Session: {
         Row: {
           created_at: string
@@ -68,32 +92,62 @@ export type Database = {
         }
         Relationships: []
       }
+      SessionPlayer: {
+        Row: {
+          created_at: string
+          id: number
+          player_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          player_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          player_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "SessionPlayer_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "Player"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "SessionPlayer_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "Session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Vote: {
         Row: {
           created_at: string
-          email: string | null
           estimation_id: string | null
           id: string
-          pattern: string | null
-          username: string | null
+          player_id: string
           value: string | null
         }
         Insert: {
           created_at?: string
-          email?: string | null
           estimation_id?: string | null
           id?: string
-          pattern?: string | null
-          username?: string | null
+          player_id: string
           value?: string | null
         }
         Update: {
           created_at?: string
-          email?: string | null
           estimation_id?: string | null
           id?: string
-          pattern?: string | null
-          username?: string | null
+          player_id?: string
           value?: string | null
         }
         Relationships: [
@@ -102,6 +156,13 @@ export type Database = {
             columns: ["estimation_id"]
             isOneToOne: false
             referencedRelation: "Estimation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Vote_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "Player"
             referencedColumns: ["id"]
           },
         ]

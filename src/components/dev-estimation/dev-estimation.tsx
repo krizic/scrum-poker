@@ -6,24 +6,27 @@ import { IUserInfo } from "../../services";
 import PokerCard from "../poker-card/poker-card";
 import "./dev-estimation.scss";
 import ReactMarkdown from "react-markdown";
+import { EstimationService, EstimationWithVotes } from "../../api";
+import { on } from "events";
+import { EstimationWithPlayerVote } from "../../api/services";
+import { Session } from "../../api/model";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface IDevEstimationProps {
-  sessionId: string;
+  session: Session;
   userInfo: IUserInfo;
 }
 
 export interface IDevEstimationState {
-  activeEstimation?: IEstimation;
-  sessionName?: string;
+  activeEstimation?: EstimationWithPlayerVote;
   currentSelectedVote?: string;
-  oneLoading?: string;
+  onLoading?: string;
 }
 
 export default class DevEstimation extends React.Component<
   IDevEstimationProps,
   IDevEstimationState
 > {
-  readonly api: any = {};
   readonly cardValues: string[] = [
     "0",
     "1",
@@ -38,54 +41,71 @@ export default class DevEstimation extends React.Component<
   ];
 
   state: IDevEstimationState = {};
+  estimationService = new EstimationService();
+  subscriptions: RealtimeChannel[] = [];
 
   componentDidMount() {
     this.setActiveEstimation();
-    this.api.onChange(this.onActiveEstimationChange);
+    this.subscriptions.push(
+      this.estimationService
+        .changes(
+          "session_id",
+          this.props.session.id,
+          this.onActiveEstimationChange
+        )
+        .subscribe()
+    );
+  }
+
+  componentWillUnmount(): void {
+    this.subscriptions.forEach((subscription) => {
+      subscription.unsubscribe();
+    });
   }
 
   setActiveEstimation() {
-    return this.api.getSession(this.props.sessionId).then((result) => {
-      const activeEstimation: IEstimation | undefined = Object.keys(
-        result.estimations!
-      ).reduce((acc, current) => {
-        const currentEstimation = result.estimations![current];
-        acc = currentEstimation.isActive ? currentEstimation : acc;
-        return acc;
-      }, undefined as IEstimation | undefined);
+    return this.estimationService
+      .getActiveEstimationWithPlayerVote(
+        this.props.session.id,
+        this.props.userInfo.id
+      )
+      .then((activeEstimation) => {
+        if (!activeEstimation) {
+          this.setState({ activeEstimation: undefined });
+        } else {
+          const currentSelectedVote = activeEstimation.Vote.find(
+            (vote) => vote.player_id === this.props.userInfo.id
+          )?.value;
 
-      const currentSelectedVote =
-        activeEstimation?.votes?.[this.props.userInfo.id]?.value;
-
-      this.setState({
-        activeEstimation,
-        sessionName: result.session_name,
-        currentSelectedVote,
+          this.setState({
+            activeEstimation,
+            currentSelectedVote,
+          });
+        }
       });
-    });
   }
 
   onActiveEstimationChange = () => {
     this.setActiveEstimation().then(() => {
       if (this.state.activeEstimation) {
-        this.api.vote(
-          this.props.sessionId,
-          this.state.activeEstimation.id,
-          this.props.userInfo
-        );
+        // this.api.vote(
+        //   this.props.sessionId,
+        //   this.state.activeEstimation.id,
+        //   this.props.userInfo
+        // );
       }
     });
   };
 
   onCardSelected = async (value: string) => {
-    this.setState({ oneLoading: value });
-    await this.api.vote(
-      this.props.sessionId,
-      this.state.activeEstimation.id,
-      this.props.userInfo,
-      value
-    );
-    this.setState({ oneLoading: null });
+    // this.setState({ onLoading: value });
+    // await this.api.vote(
+    //   this.props.sessionId,
+    //   this.state.activeEstimation.id,
+    //   this.props.userInfo,
+    //   value
+    // );
+    // this.setState({ oneLoading: null });
   };
 
   public render() {
@@ -93,7 +113,7 @@ export default class DevEstimation extends React.Component<
       <>
         <Segment.Group>
           <Segment secondary size="big">
-            Session: {this.state.sessionName}
+            Session: {this.props.session.name}
           </Segment>
 
           {!this.state.activeEstimation && (
@@ -121,7 +141,7 @@ export default class DevEstimation extends React.Component<
                 {this.cardValues.map((value) => {
                   return (
                     <PokerCard
-                      isLoading={this.state.oneLoading === value}
+                      isLoading={this.state.onLoading === value}
                       key={value}
                       onSelect={this.onCardSelected}
                       className={`dev-card ${
