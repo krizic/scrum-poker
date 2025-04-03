@@ -1,114 +1,118 @@
-import * as React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Button, Segment, Form, Icon } from "semantic-ui-react";
 import { toast, ToastContainer } from "react-toastify";
 import Papa from "papaparse";
+import {
+  fetchEstimationBySessionId,
+  fetchSessionById,
+  selectEstimationStream,
+  selectSession,
+  setEstimationStream,
+  useAppDispatch,
+  useAppSelector,
+} from "../store";
 
 import "./po-page.scss";
 import Estimations from "../components/estimations/estimations";
 import { ImportZone } from "../components/import-zone/import-zone";
-import { WithRoutes, withRouter } from "../utils";
-import { EstimationService, EstimationWithVotes, SessionService } from "../api";
+import { EstimationService } from "../api";
 import { Estimation, Session } from "../api/model";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 interface IEstimationForm {
   estimation_name: string;
   estimation_description: string;
 }
 
-export interface IPoPageProps extends WithRoutes {}
+export interface IPoPageProps {}
 
-export interface IPoPageState {
-  session?: Session;
-  estimations?: Estimation[];
-  estimationForm?: Partial<IEstimationForm>;
-}
+const PoPage: React.FC<IPoPageProps> = () => {
+  const estimationService = new EstimationService();
+  const [estimationForm, setEstimationForm] = useState<
+    Partial<IEstimationForm>
+  >({});
+  const [subs, setSubs] = useState<RealtimeChannel[]>([]);
+  const dispatch = useAppDispatch();
+  const currentSession = useAppSelector((state) => state.session.current);
+  const currentEstimations = useAppSelector(
+    (state) => state.estimation.current
+  );
 
-class PoPage extends React.Component<IPoPageProps, IPoPageState> {
-  sessionService = new SessionService();
-  estimationService = new EstimationService();
-  sessionId: string | null;
-  subs: RealtimeChannel[] = [];
+  //get session ID
+  const { search } = useLocation();
 
-  constructor(props: IPoPageProps) {
-    super(props);
+  const sessionId = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const sessionId = params.get("id");
+    return sessionId;
+  }, [search]);
 
-    const params = new URLSearchParams(this.props.router.location.search);
-    this.sessionId = params.get("id");
-    this.state = {};
-  }
+  const streamEstimationChanges = useSelector(selectEstimationStream);
 
-  componentDidMount() {
-    if (this.sessionId) {
-      this.getSession();
-      this.getEstimations();
-      this.subs.push(
-        this.estimationService
-          .changes("session_id", this.sessionId, this.getEstimations)
-          .subscribe()
-      );
+  // Initial
+  useEffect(() => {
+    // initial fetch of session Object
+    console.log("sessionId", sessionId);
+    if (sessionId) {
+      getSession(sessionId);
+      getEstimations(sessionId);
+
+      const subscription = estimationService
+        .changes("session_id", sessionId, (payload) => {
+          dispatch(setEstimationStream(payload));
+        })
+        .subscribe();
+
+      setSubs((prevSubs) => [...prevSubs, subscription]);
     } else {
-      // redirect him
+      // redirect logic here
     }
-  }
 
-  componentWillUnmount(): void {
-    this.subs.forEach((sub) => {
-      sub.unsubscribe();
-    });
-  }
+    // return () => {
+    //   subs.forEach((sub) => sub.unsubscribe());
+    // };
+  }, []);
 
-  getSession = () => {
-    this.sessionService.get(this.sessionId!).then((session) => {
-      this.setState({ session: session });
-    });
+  // Triggered by changes in the stream
+  useEffect(() => {
+    if (sessionId) {
+      getEstimations(sessionId);
+    }
+  }, [streamEstimationChanges]);
+
+  const getEstimations = (sessionId: Session["id"]): void => {
+    dispatch(fetchEstimationBySessionId(sessionId));
   };
 
-  getEstimations = () => {
-    this.estimationService
-      .getBySessionId(this.sessionId!)
-      .then((estimations) => {
-        this.setState({ estimations: estimations });
-        debugger;
-      });
+  const getSession = (sessionId: Session["id"]): void => {
+    dispatch(fetchSessionById(sessionId));
   };
 
-  onEstimationFormInputChange = (
-    event:
-      | React.ChangeEvent<HTMLTextAreaElement>
-      | React.ChangeEvent<HTMLInputElement>
+  const onEstimationFormInputChange = (
+    changeEvent: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
-    const estimationForm = {
-      ...this.state.estimationForm,
-      ...{ [event.currentTarget.name]: event.currentTarget.value },
-    };
-
-    this.setState({ estimationForm });
+    const { name, value } = changeEvent.currentTarget;
+    setEstimationForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
   };
 
-  onEstimationFormSubmit = (form?: Partial<IEstimationForm>) => {
+  const onEstimationFormSubmit = (form?: Partial<IEstimationForm>) => {
     if (form && form.estimation_name) {
-      this.estimationService.create({
+      estimationService.create({
         name: form.estimation_name,
         description: form.estimation_description,
-        session_id: this.sessionId!,
+        session_id: sessionId!,
       });
     }
   };
 
-  onImportFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.importEstimationsFromFile(event.target.files[0]);
-  };
-
-  onImportFileAccepted = (acceptedFiles: File[]) => {
-    this.importEstimationsFromFile(acceptedFiles[0]);
-  };
-
-  importEstimationsFromFile = (file: File) => {
+  const importEstimationsFromFile = (file: File) => {
     Papa.parse(file, {
       complete: (results) => {
-        console.log(results);
-
         if (!results.errors.length) {
           const fields = (results.data[0] as string[]).reduce(
             (acc, current, currentIndex) => {
@@ -136,16 +140,14 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
                 return {
                   name: current[fields.issueKey],
                   description: current[fields.description],
-                  session_id: this.sessionId!,
+                  session_id: sessionId!,
                 } as Estimation;
               })
             : undefined;
 
-          this.estimationService
-            .bulkCreate(importedEstimations)
-            .then((response) => {
-              console.log("estimationService.bulkCreate", response);
-            });
+          estimationService.bulkCreate(importedEstimations).then((response) => {
+            console.log("estimationService.bulkCreate", response);
+          });
         } else {
           throw new Error("Error parsing file");
         }
@@ -153,89 +155,99 @@ class PoPage extends React.Component<IPoPageProps, IPoPageState> {
     });
   };
 
-  onCopyButtonClick = () => {
-    const devSessionUrl = `${window.location.origin}/dev?id=${this.sessionId}`;
+  const onImportFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    importEstimationsFromFile(event.target.files[0]);
+  };
+
+  const onImportFileAccepted = (acceptedFiles: File[]) => {
+    importEstimationsFromFile(acceptedFiles[0]);
+  };
+
+  const onCopyButtonClick = () => {
+    const devSessionUrl = `${window.location.origin}/dev?id=${sessionId}`;
     navigator.clipboard.writeText(devSessionUrl);
     toast.success("Dev url Copied!", {
       position: toast.POSITION.BOTTOM_RIGHT,
     });
   };
 
-  public render() {
-    const { session, estimations } = this.state;
-    const hasEstimations: boolean =
-      session && estimations && estimations?.length > 0;
-    const estimationsComponent = hasEstimations ? (
+  const hasEstimations = useMemo(() => {
+    return (
+      currentSession && currentEstimations && currentEstimations.length > 0
+    );
+  }, [currentSession, currentEstimations]);
+
+  const estimationComponent = useMemo(() => {
+    return hasEstimations ? (
       <Estimations
-        id={this.state.session.id}
-        estimations={estimations}
+        id={currentSession!.id}
+        estimations={currentEstimations}
       ></Estimations>
     ) : (
       <h4> No Estimations</h4>
     );
+  }, [currentSession, currentEstimations]);
 
-    return (
-      <div id="po-page">
-        <div className="wrapper">
-          <Segment.Group>
-            <Segment secondary clearing className="session-header">
-              Session: {this.state.session?.name}
-              <Button
-                onClick={this.onCopyButtonClick}
-                color="blue"
-                size="mini"
-                floated="right"
-                inverted
+  return (
+    <div id="po-page">
+      <div className="wrapper">
+        <Segment.Group>
+          <Segment secondary clearing className="session-header">
+            Session: {currentSession?.name}
+            <Button
+              onClick={onCopyButtonClick}
+              color="blue"
+              size="mini"
+              floated="right"
+              inverted
+            >
+              <Icon name="share alternate" />
+              Copy Invitation Link
+            </Button>
+          </Segment>
+          <Segment.Group className="estimation-form-group" horizontal>
+            <Segment>
+              <Form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  onEstimationFormSubmit(estimationForm);
+                }}
               >
-                <Icon name="share alternate" />
-                Copy Invitation Link
-              </Button>
+                <Form.Field>
+                  <input
+                    name="estimation_name"
+                    placeholder="Story Name"
+                    onChange={onEstimationFormInputChange}
+                    value={estimationForm?.estimation_name || ""}
+                  />
+                </Form.Field>
+                <Form.Field>
+                  <textarea
+                    rows={2}
+                    name="estimation_description"
+                    placeholder="Story Description"
+                    onChange={onEstimationFormInputChange}
+                    value={estimationForm?.estimation_description || ""}
+                  ></textarea>
+                </Form.Field>
+                <Button floated="left" type="submit" color="green">
+                  <Icon name="angle double down" />
+                  Add Story
+                </Button>
+              </Form>
             </Segment>
-            <Segment.Group className="estimation-form-group" horizontal>
-              <Segment>
-                <Form
-                  onSubmit={(event) => {
-                    this.onEstimationFormSubmit(this.state.estimationForm);
-                  }}
-                >
-                  <Form.Field>
-                    <input
-                      name="estimation_name"
-                      placeholder="Story Name"
-                      onChange={this.onEstimationFormInputChange}
-                      value={this.state.estimationForm?.estimation_name}
-                    />
-                  </Form.Field>
-                  <Form.Field>
-                    <textarea
-                      rows={2}
-                      name="estimation_description"
-                      placeholder="Story Description"
-                      onChange={this.onEstimationFormInputChange}
-                      value={this.state.estimationForm?.estimation_description}
-                    ></textarea>
-                  </Form.Field>
-                  <Button floated="left" type="submit" color="green">
-                    <Icon name="angle double down" />
-                    Add Story
-                  </Button>
-                </Form>
-              </Segment>
-              <Segment className="estimation-form-group__upload">
-                <ImportZone
-                  onFileUploaded={this.onImportFileAccepted}
-                ></ImportZone>
-              </Segment>
-            </Segment.Group>
+            <Segment className="estimation-form-group__upload">
+              <ImportZone onFileUploaded={onImportFileAccepted}></ImportZone>
+            </Segment>
           </Segment.Group>
-          <Segment.Group className="estimation-container">
-            <Segment textAlign="center">{estimationsComponent}</Segment>
-          </Segment.Group>
-          <ToastContainer autoClose={3000} />
-        </div>
+        </Segment.Group>
+        <Segment.Group className="estimation-container">
+          <Segment textAlign="center">{estimationComponent}</Segment>
+        </Segment.Group>
+        <ToastContainer autoClose={3000} />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
-export default withRouter(PoPage);
+export default PoPage;

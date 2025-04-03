@@ -75,7 +75,6 @@ const DevEstimation: React.FC<IDevEstimationProps> = ({ session, user }) => {
   }, [session.id, user.id]);
 
   const initializeVoteObject = useEffect(() => {
-    debugger;
     if (activeEstimation) {
       if (activeEstimation.Vote.length === 0) {
         voteService

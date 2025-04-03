@@ -45,11 +45,11 @@ export default class VotesTable extends React.Component<
         .subscribe()
     );
 
-    this.subscriptions.push(
-      this.estimationService
-        .changes("id", this.props.estimationId, this.getEstimation)
-        .subscribe()
-    );
+    // this.subscriptions.push(
+    //   this.estimationService
+    //     .changes("id", this.props.estimationId, this.getEstimation)
+    //     .subscribe()
+    // );
   }
 
   componentWillUnmount(): void {

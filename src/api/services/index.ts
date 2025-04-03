@@ -8,6 +8,8 @@ export class SessionService extends BaseApi<Session, "Session"> {
     super(supabase, "Session");
   }
 
+  
+
   // Providing a healtcheck method to test the connection
   status = async (): Promise<number> => {
     const { error, status } = await this.table.select();

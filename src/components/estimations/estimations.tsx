@@ -30,7 +30,7 @@ export default class Estimations extends React.Component<
 
   mapEstimationsToPanes = () => {
     return this.props.estimations
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         return a.created_at < b.created_at ? 1 : -1;
       })
       .map((estimation) => {
@@ -55,7 +55,6 @@ export default class Estimations extends React.Component<
       <Tab
         menu={{
           pointing: true,
-          renderActiveOnly: false,
           fluid: true,
           vertical: true,
         }}

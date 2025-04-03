@@ -63,7 +63,7 @@ export abstract class BaseApi<
     id: string,
     callback: (payload: Record<string, any>) => void
   ): RealtimeChannel {
-    return this.store.channel("schema-db-changes").on(
+    return this.store.channel(`public:${this.tableName}`).on(
       "postgres_changes",
       {
         event: "*",
