@@ -8,8 +8,6 @@ export class SessionService extends BaseApi<Session, "Session"> {
     super(supabase, "Session");
   }
 
-  
-
   // Providing a healtcheck method to test the connection
   status = async (): Promise<number> => {
     const { error, status } = await this.table.select();
@@ -211,12 +209,29 @@ export class VoteService extends BaseApi<Vote, "Vote"> {
   }
 
   upsert = async (vote: Partial<Vote>): Promise<Vote> => {
-    const { data, error } = await this.table.upsert([vote]);
+    const { data, error } = await this.table.upsert(vote).select();
     if (error) {
       throw error;
     }
     return data[0];
   };
+
+  getByEstimationAndPlayer = async (
+    estimationId: string,
+    playerId: string
+  ): Promise<Vote | null> => {
+    const { data, error } = await this.table
+      .select()
+      .eq("estimation_id", estimationId)
+      .eq("player_id", playerId)
+      .limit(1);
+
+    if (error) {
+      // throw error;
+      return null;
+    }
+    return data?.[0] || null;
+  }
 }
 
 export class PlayerService extends BaseApi<Player, "Player"> {

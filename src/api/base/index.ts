@@ -16,9 +16,7 @@ export abstract class BaseApi<
   }
 
   async create(createData): Promise<T> {
-    const { data, error } = await this.table
-      .insert(createData)
-      .select();
+    const { data, error } = await this.table.insert(createData).select();
     if (error) {
       throw error;
     }
@@ -38,7 +36,7 @@ export abstract class BaseApi<
 
   /**
    * Does not provide reactivity, extend with isDeleted property
-   * @param id 
+   * @param id
    */
   async delete(id: string) {
     const { error } = await this.table.delete().eq("id", id as any);
@@ -72,7 +70,11 @@ export abstract class BaseApi<
         filter: `${filterProperty as string}=eq.${id}`,
       },
       (payload) => {
-        console.log(payload);
+        console.log(
+          "Change received:",
+          `${payload.table} - ${payload.eventType}`,
+          payload
+        );
         callback(payload);
       }
     );

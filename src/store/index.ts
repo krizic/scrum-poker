@@ -9,6 +9,12 @@ export {
 export {
   fetchEstimationBySessionId,
   selectEstimations,
+  fetchActiveEstimationForPlayer,
+  selectActiveEstimationForPlayer,
+  selectCurrentSelectedPlayerEstimation,
+  selectActiveEstimation,
+  selectEstimationChangeStream,
+  subscribeToEstimationChanges,
 } from "./features/estimation/estimationSlice";
 
 export {
@@ -17,3 +23,10 @@ export {
   selectVotesStream,
   setVotesStream,
 } from "./features/stream/streamSlice";
+
+export {
+  fetchVoteByEstimationAndPlayer,
+  selectVote,
+  updateVote,
+  selectVoteLoading,
+} from "./features/vote/voteSlice";

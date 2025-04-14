@@ -2,5 +2,12 @@
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "cSpell.words": ["Gravatar", "nivo", "papaparse", "stackable", "trianglify"]
+  "cSpell.words": [
+    "Gravatar",
+    "nivo",
+    "papaparse",
+    "stackable",
+    "supabase",
+    "trianglify"
+  ]
 }

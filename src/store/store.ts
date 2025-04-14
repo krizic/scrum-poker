@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { sessionReducer } from "./features/session/sessionSlice";
 import { estimationReducer } from "./features/estimation/estimationSlice";
 import { streamReducer } from "./features/stream/streamSlice";
+import { voteReducer } from "./features/vote/voteSlice";
 // ...
 
 export const store = configureStore({
@@ -10,6 +11,7 @@ export const store = configureStore({
     session: sessionReducer,
     estimation: estimationReducer,
     stream: streamReducer,
+    vote: voteReducer
     // comments: commentsReducer,
     // users: usersReducer,
   },

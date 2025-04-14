@@ -39,9 +39,14 @@ const PoPage: React.FC<IPoPageProps> = () => {
   const currentEstimations = useAppSelector(
     (state) => state.estimation.current
   );
+  const estimationStream = useAppSelector(selectEstimationStream);
 
   //get session ID
   const { search } = useLocation();
+
+  useEffect(() => {
+    console.log("estimationStream", estimationStream);
+  }, [estimationStream]);
 
   const sessionId = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -70,9 +75,9 @@ const PoPage: React.FC<IPoPageProps> = () => {
       // redirect logic here
     }
 
-    // return () => {
-    //   subs.forEach((sub) => sub.unsubscribe());
-    // };
+    return () => {
+      subs.forEach((sub) => sub.unsubscribe());
+    };
   }, []);
 
   // Triggered by changes in the stream
@@ -186,7 +191,7 @@ const PoPage: React.FC<IPoPageProps> = () => {
     ) : (
       <h4> No Estimations</h4>
     );
-  }, [currentSession, currentEstimations]);
+  }, [currentSession, currentEstimations, streamEstimationChanges]);
 
   return (
     <div id="po-page">

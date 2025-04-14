@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Button,
   Segment,
@@ -14,146 +14,127 @@ import EstimationChart from "../estimation-chart/estimation-chart";
 import EstimationStatistics from "../est-statistics/est-statistics";
 import { EstimationService, EstimationWithVotes, VoteService } from "../../api";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { selectEstimationStream, useAppSelector } from "../../store";
 
 export interface IVotesTableProps {
   estimationId: string;
 }
 
-export interface IVotesTableState {
-  estimationWithVotes?: EstimationWithVotes;
-}
+const VotesTable: React.FC<IVotesTableProps> = ({ estimationId }) => {
+  const voteService = new VoteService();
+  const estimationService = new EstimationService();
+  const [subscriptions, setSubscriptions] = useState<RealtimeChannel[]>([]);
+  const [estimationWithVotes, setEstimationWithVotes] = useState<
+    EstimationWithVotes | undefined
+  >(undefined);
 
-export default class VotesTable extends React.Component<
-  IVotesTableProps,
-  IVotesTableState
-> {
-  voteService = new VoteService();
-  estimationService = new EstimationService();
-  subscriptions: RealtimeChannel[] = [];
+  const estimationStream = useAppSelector(selectEstimationStream)
 
-  constructor(props: IVotesTableProps) {
-    super(props);
-    this.state = {};
-  }
+  const getEstimation = useCallback(() => {
+    estimationService
+      .getOneWithVotes(estimationId)
+      .then((estimation) => setEstimationWithVotes(estimation));
+  }, [estimationId, estimationService]);
 
-  componentDidMount() {
-    this.getEstimation();
+  useEffect(() => {
+    getEstimation();
+  }, [estimationStream]);
 
-    this.subscriptions.push(
-      this.voteService
-        .changes("estimation_id", this.props.estimationId, this.getEstimation)
-        .subscribe()
-    );
+  useEffect(() => {
 
-    // this.subscriptions.push(
-    //   this.estimationService
-    //     .changes("id", this.props.estimationId, this.getEstimation)
-    //     .subscribe()
-    // );
-  }
+    const voteSubscription = voteService
+      .changes("estimation_id", estimationId, getEstimation)
+      .subscribe();
 
-  componentWillUnmount(): void {
-    this.subscriptions.forEach((sub) => {
-      sub.unsubscribe();
-    });
-  }
+    setSubscriptions([voteSubscription]);
 
-  getEstimation = () => {
-    this.estimationService
-      .getOneWithVotes(this.props.estimationId)
-      .then((estimation) => {
-        this.setState({ estimationWithVotes: estimation });
-      });
-  }
+    return () => {
+      subscriptions.forEach((sub) => sub.unsubscribe());
+    };
+  }, []);
 
-  onToggleVoteClick = (event: React.MouseEvent, active: boolean) => {
-    const { estimationWithVotes } = this.state;
-    this.estimationService.changeEstimationStatus(
-      estimationWithVotes.session_id,
-      estimationWithVotes.id!,
-      active
-    );
+  const onToggleVoteClick = (event: React.MouseEvent, active: boolean) => {
+    if (estimationWithVotes) {
+      estimationService.changeEstimationStatus(
+        estimationWithVotes.session_id,
+        estimationWithVotes.id!,
+        active
+      );
+    }
   };
 
-  onDeleteClick = (e: React.MouseEvent) => {
-    this.estimationService.setAsDeleted(this.props.estimationId);
+  const onDeleteClick = () => {
+    estimationService.setAsDeleted(estimationId);
   };
 
-  public render() {
-    const { estimationWithVotes } = this.state;
-    return estimationWithVotes ? (
-      <div className="votes-table">
-        <SegmentGroup>
-          <Segment secondary textAlign="center">
-            <Button.Group>
-              <Button
-                circular
-                icon="play"
-                color={!estimationWithVotes.isActive ? "blue" : undefined}
-                disabled={estimationWithVotes.isActive}
-                content="Start"
-                onClick={(e) => {
-                  this.onToggleVoteClick(e, true);
-                }}
-              />
-              <Button
-                icon="stop"
-                disabled={!estimationWithVotes.isActive}
-                negative={estimationWithVotes.isActive}
-                content="Stop"
-                onClick={(e) => {
-                  this.onToggleVoteClick(e, false);
-                }}
-              />
-              <Button
-                disabled={estimationWithVotes.isActive}
-                icon="trash alternate"
-                content="Delete"
-                onClick={this.onDeleteClick}
-              />
-            </Button.Group>
+  return estimationWithVotes ? (
+    <div className="votes-table">
+      <SegmentGroup>
+        <Segment secondary textAlign="center">
+          <Button.Group>
+            <Button
+              circular
+              icon="play"
+              color={!estimationWithVotes.isActive ? "blue" : undefined}
+              disabled={estimationWithVotes.isActive}
+              content="Start"
+              onClick={(e) => onToggleVoteClick(e, true)}
+            />
+            <Button
+              icon="stop"
+              disabled={!estimationWithVotes.isActive}
+              negative={estimationWithVotes.isActive}
+              content="Stop"
+              onClick={(e) => onToggleVoteClick(e, false)}
+            />
+            <Button
+              disabled={estimationWithVotes.isActive}
+              icon="trash alternate"
+              content="Delete"
+              onClick={onDeleteClick}
+            />
+          </Button.Group>
+        </Segment>
+        {estimationWithVotes.description && (
+          <Segment secondary textAlign="left">
+            <ReactMarkdown children={estimationWithVotes.description} />
           </Segment>
-          {estimationWithVotes.description && (
-            <Segment secondary textAlign="left">
-              <ReactMarkdown children={estimationWithVotes.description} />
-            </Segment>
-          )}
-          {!estimationWithVotes.isActive &&
-            !!estimationWithVotes.Vote?.length && (
-              <Segment.Group horizontal>
-                <Segment>
-                  <EstimationStatistics
-                    estimation={estimationWithVotes}
-                  ></EstimationStatistics>
-                </Segment>
-                <EstimationChart
+        )}
+        {!estimationWithVotes.isActive &&
+          !!estimationWithVotes.Vote?.length && (
+            <Segment.Group horizontal>
+              <Segment>
+                <EstimationStatistics
                   estimation={estimationWithVotes}
-                ></EstimationChart>
-              </Segment.Group>
-            )}
-          {!estimationWithVotes.Vote?.length && (
-            <Message warning attached="bottom">
-              <Icon name="warning" />
-              There are no votes for this story.
-            </Message>
+                ></EstimationStatistics>
+              </Segment>
+              <EstimationChart
+                estimation={estimationWithVotes}
+              ></EstimationChart>
+            </Segment.Group>
           )}
-          {estimationWithVotes.Vote?.length > 0 && (
-            <Segment>
-              <div className="votes-table__cards">
-                {estimationWithVotes.Vote.map((vote) => {
-                  return (
-                    <CardReveal
-                      key={vote.id}
-                      vote={vote}
-                      shouldHide={estimationWithVotes.isActive}
-                    ></CardReveal>
-                  );
-                })}
-              </div>
-            </Segment>
-          )}
-        </SegmentGroup>
-      </div>
-    ) : null;
-  }
-}
+        {!estimationWithVotes.Vote?.length && (
+          <Message warning attached="bottom">
+            <Icon name="warning" />
+            There are no votes for this story.
+          </Message>
+        )}
+        {estimationWithVotes.Vote?.length > 0 && (
+          <Segment>
+            <div className="votes-table__cards">
+              {estimationWithVotes.Vote.map((vote) => (
+                <CardReveal
+                  key={vote.id}
+                  vote={vote}
+                  shouldHide={estimationWithVotes.isActive}
+                ></CardReveal>
+              ))}
+            </div>
+          </Segment>
+        )}
+      </SegmentGroup>
+    </div>
+  ) : null;
+};
+
+export default VotesTable;

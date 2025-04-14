@@ -1,97 +1,82 @@
-import * as React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import "./developer.scss";
 import { LocalUser, LocalUserInfoApi } from "../services";
 import DevSignIn from "../components/dev-sign-in/dev-sign-in";
 import DevEstimation from "../components/dev-estimation/dev-estimation";
 import { Segment, Loader } from "semantic-ui-react";
-// import {ApiService} from "../api/indexold";
 import { WithRoutes, withRouter } from "../utils";
 import { PlayerService, SessionService } from "../api";
 import { Player, Session } from "../api/model";
 
 export interface IDeveloperPageProps extends WithRoutes {}
 
-export interface IDeveloperPageState {
-  localUser?: LocalUser;
-  user?: Player;
-  sessionValid?: boolean;
-  session?: Session;
-  initialLoad?: boolean;
-}
+const DeveloperPage: React.FC<IDeveloperPageProps> = ({ router }) => {
+  const sessionService = useMemo(() => new SessionService(), []);
+  const playerService = useMemo(() => new PlayerService(), []);
 
-class DeveloperPage extends React.Component<
-  IDeveloperPageProps,
-  IDeveloperPageState
-> {
-  sessionId: string;
-  sessionService = new SessionService();
-  playerService = new PlayerService();
+  const params = new URLSearchParams(router.location.search);
+  const sessionId = params.get("id");
 
-  constructor(props: IDeveloperPageProps) {
-    super(props);
+  const [localUser, setLocalUser] = useState<LocalUser | undefined>(
+    LocalUserInfoApi.getUserInfo() || undefined
+  );
+  const [user, setUser] = useState<Player | undefined>(undefined);
+  const [sessionValid, setSessionValid] = useState<boolean | undefined>(
+    undefined
+  );
+  const [session, setSession] = useState<Session | undefined>(undefined);
+  const [initialLoad, setInitialLoad] = useState<boolean>(false);
 
-    const params = new URLSearchParams(this.props.router.location.search);
-    this.sessionId = params.get("id");
-    this.state = { localUser: LocalUserInfoApi.getUserInfo() || undefined };
-  }
-
-  componentDidMount() {
-    if (this.sessionId) {
-      this.sessionService
-        .get(this.sessionId)
+  useEffect(() => {
+    if (sessionId) {
+      sessionService
+        .get(sessionId)
         .then((sessionResponse) => {
-          this.setState({
-            sessionValid: sessionResponse?.id === this.sessionId,
-            session: sessionResponse,
-          });
+          setSessionValid(sessionResponse?.id === sessionId);
+          setSession(sessionResponse);
         })
-        .catch((error) => {
-          this.setState({ sessionValid: false });
+        .catch(() => {
+          setSessionValid(false);
         })
         .finally(() => {
-          this.setState({ initialLoad: true });
+          setInitialLoad(true);
         });
     }
 
-    // RehydratePlayerInfo
-    if (this.state.localUser) {
-      this.playerService.get(this.state.localUser?.id).then((player) => {
-        this.setState({ user: player });
+    if (localUser) {
+      playerService.get(localUser.id).then((player) => {
+        setUser(player);
       });
     }
-  }
+  }, []);
 
-  onUserSignIn = (userInfo: Player) => {
-    this.playerService.create(userInfo).then((player) => {
+  const onUserSignIn = (userInfo: Player) => {
+    playerService.create(userInfo).then((player) => {
       LocalUserInfoApi.saveUserInfo({ id: player.id });
-      this.setState({ user: player });
+      setUser(player);
     });
   };
 
-  public render() {
-    const main =
-      this.sessionId && this.state.sessionValid ? (
-        this.state.user ? (
-          <DevEstimation
-            user={this.state.user}
-            session={this.state.session}
-          ></DevEstimation>
-        ) : (
-          <DevSignIn onUserSign={this.onUserSignIn}></DevSignIn>
-        )
-      ) : (
-        <Segment>No session Id</Segment>
-      );
+  const main = useMemo(() => {
+    if (!sessionId || !sessionValid) {
+      return <Segment>No session Id</Segment>;
+    }
 
-    return (
-      <div className="developer-page">
-        {this.state.initialLoad && main}
-        {!this.state.initialLoad && (
-          <Loader inverted active size="huge" content="Loading" />
-        )}
-      </div>
+    return user ? (
+      <DevEstimation user={user} session={session!}></DevEstimation>
+    ) : (
+      <DevSignIn onUserSign={onUserSignIn}></DevSignIn>
     );
-  }
-}
+  }, [sessionId, sessionValid, user, session]);
+
+  return (
+    <div className="developer-page">
+      {initialLoad && main}
+      {!initialLoad && (
+        <Loader inverted active size="huge" content="Loading" />
+      )}
+    </div>
+  );
+};
 
 export default withRouter(DeveloperPage);

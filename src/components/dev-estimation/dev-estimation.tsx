@@ -3,11 +3,22 @@ import { Segment, Divider } from "semantic-ui-react";
 import PokerCard from "../poker-card/poker-card";
 import "./dev-estimation.scss";
 import ReactMarkdown from "react-markdown";
-import { EstimationService } from "../../api";
-import { EstimationWithPlayerVote, VoteService } from "../../api/services";
 import { Player, Session } from "../../api/model";
-import { RealtimeChannel } from "@supabase/supabase-js";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
+import {
+  fetchActiveEstimationForPlayer,
+  fetchEstimationBySessionId,
+  fetchVoteByEstimationAndPlayer,
+  selectCurrentSelectedPlayerEstimation,
+  selectEstimationChangeStream,
+  selectActiveEstimation,
+  subscribeToEstimationChanges,
+  useAppDispatch,
+  useAppSelector,
+  selectVote,
+  selectVoteLoading,
+  updateVote,
+} from "../../store";
 
 export interface IDevEstimationProps {
   session: Session;
@@ -28,83 +39,66 @@ const DevEstimation: React.FC<IDevEstimationProps> = ({ session, user }) => {
     "?",
   ];
 
-  const [activeEstimation, setActiveEstimation] = useState<
-    EstimationWithPlayerVote | undefined
-  >(undefined);
-  const [currentSelectedVote, setCurrentSelectedVote] = useState<
-    string | undefined
-  >(undefined);
-  const [onLoading, setOnLoading] = useState<string | undefined>(undefined);
-  const [voteId, setVoteId] = useState<string | undefined>(undefined);
+  const currentSelectedPlayerEstimation = useAppSelector(
+    selectCurrentSelectedPlayerEstimation
+  )(user.id);
 
-  const estimationService = new EstimationService();
-  const voteService = new VoteService();
+  const activeEstimation = useAppSelector(selectActiveEstimation);
+  const estimationChangeStream = useAppSelector(selectEstimationChangeStream);
+  const playerVote = useAppSelector(selectVote);
+  const isUpdateVoteLoading = useAppSelector(selectVoteLoading);
+
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    onActiveEstimationChange();
-    const estimationSub = estimationService
-      .changes("session_id", session.id, onActiveEstimationChange)
-      .subscribe();
-
-    const subscriptions: RealtimeChannel[] = [];
-    subscriptions.push(estimationSub);
-
-    return () => {
-      subscriptions.forEach((subscription) => {
-        subscription.unsubscribe();
-      });
-    };
+    // subscribe to the events in case there is no subscription active
+    dispatch(subscribeToEstimationChanges(session.id));
+    // get initial list of session estimations
+    dispatch(fetchEstimationBySessionId(session.id));
   }, []);
 
-  const fetchActiveEstimation = useCallback(async () => {
-    const activeEstimation =
-      await estimationService.getActiveEstimationWithPlayerVote(
-        session.id,
-        user.id
-      );
-    if (!activeEstimation) {
-      setActiveEstimation(undefined);
-    } else {
-      const currentSelectedVote = activeEstimation.Vote.find(
-        (vote) => vote.player_id === user.id
-      )?.value;
-
-      setActiveEstimation(activeEstimation);
-      setCurrentSelectedVote(currentSelectedVote);
-    }
-  }, [session.id, user.id]);
-
-  const initializeVoteObject = useEffect(() => {
-    if (activeEstimation) {
-      if (activeEstimation.Vote.length === 0) {
-        voteService
-          .create({
-            estimation_id: activeEstimation.id,
-            player_id: user.id,
-          })
-          .then((newEmptyVote) => {
-            setVoteId(newEmptyVote.id);
-          });
-      } else {
-        setVoteId(activeEstimation.Vote[0].id);
+  // react on estimation change stream
+  useEffect(() => {
+    if (estimationChangeStream) {
+      const estimation = estimationChangeStream.new;
+      if (estimation) {
+        dispatch(fetchEstimationBySessionId(session.id));
       }
     }
-  }, [activeEstimation, user.id]);
+  }, [estimationChangeStream]);
 
-  const onActiveEstimationChange = useCallback(async () => {
-    await fetchActiveEstimation();
-  }, [fetchActiveEstimation, initializeVoteObject]);
+  //react on isActiveEstimation change
+  useEffect(() => {
+    if (activeEstimation !== undefined) {
+      // fetch active estimation for player
+      dispatch(
+        fetchActiveEstimationForPlayer({
+          sessionId: session.id,
+          playerId: user.id,
+        })
+      );
+      // fetch/initiate vote object
+      dispatch(
+        fetchVoteByEstimationAndPlayer({
+          estimationId: activeEstimation.id,
+          playerId: user.id,
+        })
+      );
+    } 
+  }, [activeEstimation]);
 
+
+  const onActiveEstimationChange = () => {
+    dispatch(
+      fetchActiveEstimationForPlayer({
+        sessionId: session.id,
+        playerId: user.id,
+      })
+    );
+  };
   const onCardSelected = async (value: string) => {
-    if (voteId) {
-      setOnLoading(value);
-      await voteService.update(voteId, {
-        estimation_id: activeEstimation!.id,
-        player_id: user.id,
-        value,
-      });
-      setOnLoading(undefined);
-      await fetchActiveEstimation();
+    if (playerVote) {
+      dispatch(updateVote({value, voteId: playerVote.id}));
     }
   };
 
@@ -136,11 +130,13 @@ const DevEstimation: React.FC<IDevEstimationProps> = ({ session, user }) => {
               {cardValues.map((value) => {
                 return (
                   <PokerCard
-                    isLoading={onLoading === value}
+                    isLoading={isUpdateVoteLoading === value}
                     key={value}
                     onSelect={onCardSelected}
                     className={`dev-card ${
-                      value === currentSelectedVote ? "selected" : ""
+                      value === playerVote?.value
+                        ? "selected"
+                        : ""
                     }`}
                     side="front"
                     voteValue={value}

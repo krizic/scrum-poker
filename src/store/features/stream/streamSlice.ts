@@ -20,7 +20,6 @@ export const streamSlice = createSlice({
   initialState,
   reducers: {
     setEstimationStream: (state, action) => {
-      console.log("setEstimationStream", action.payload);
       state.estimationsStream = action.payload;
     },
     setVotesStream: (state, action) => {
