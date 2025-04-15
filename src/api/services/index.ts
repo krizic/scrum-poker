@@ -93,7 +93,7 @@ export class EstimationService extends BaseApi<Estimation, "Estimation"> {
 
     estimations.forEach((estimation) => {
       if (estimation.isActive) {
-        forUpdate.push({ ...estimation, isActive: false });
+        forUpdate.push({ ...estimation, isActive: false, isEnded: true });
       }
       if (estimation.id === estimationId && !estimation.isActive) {
         forUpdate.push({ ...estimation, isActive });
@@ -231,7 +231,7 @@ export class VoteService extends BaseApi<Vote, "Vote"> {
       return null;
     }
     return data?.[0] || null;
-  }
+  };
 }
 
 export class PlayerService extends BaseApi<Player, "Player"> {

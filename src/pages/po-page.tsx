@@ -12,7 +12,7 @@ import {
 } from "../store";
 
 import "./po-page.scss";
-import Estimations from "../components/estimations/estimations";
+import { Estimations } from "../components/estimations";
 import { ImportZone } from "../components/import-zone/import-zone";
 import { EstimationService } from "../api";
 import { Estimation, Session } from "../api/model";
