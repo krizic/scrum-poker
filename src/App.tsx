@@ -1,6 +1,11 @@
 import React, { Suspense } from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 
+//Prime Context
+import { PrimeReactProvider } from "primereact/api";
+import "primereact/resources/themes/lara-light-cyan/theme.css";
+import "primeicons/primeicons.css";
+
 import "./App.css";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
@@ -20,34 +25,36 @@ function App() {
 
   return (
     <Provider store={store}>
-      <BrowserRouter basename={baseName}>
-        <Routes>
-          <Route
-            path={AppPath.Developer}
-            element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <DeveloperPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path={AppPath.Po}
-            element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <PoPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path={AppPath.Start}
-            element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <StartPage />
-              </Suspense>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+      <PrimeReactProvider value={{ ripple: true, locale: "en" }}>
+        <BrowserRouter basename={baseName}>
+          <Routes>
+            <Route
+              path={AppPath.Developer}
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <DeveloperPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path={AppPath.Po}
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <PoPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path={AppPath.Start}
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <StartPage />
+                </Suspense>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </PrimeReactProvider>
     </Provider>
   );
 }

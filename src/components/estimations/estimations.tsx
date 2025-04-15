@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Tab } from "semantic-ui-react";
+import { Menu } from 'primereact/menu';
 
 import VotesTable from "../votes-table/votes-table";
 
