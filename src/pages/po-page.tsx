@@ -5,9 +5,8 @@ import Papa from "papaparse";
 import {
   fetchEstimationBySessionId,
   fetchSessionById,
-  selectEstimationStream,
-  selectSession,
-  setEstimationStream,
+  selectEstimationChangeStream,
+  subscribeToEstimationChanges,
   useAppDispatch,
   useAppSelector,
 } from "../store";
@@ -17,9 +16,7 @@ import Estimations from "../components/estimations/estimations";
 import { ImportZone } from "../components/import-zone/import-zone";
 import { EstimationService } from "../api";
 import { Estimation, Session } from "../api/model";
-import { RealtimeChannel } from "@supabase/supabase-js";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 interface IEstimationForm {
   estimation_name: string;
@@ -33,20 +30,15 @@ const PoPage: React.FC<IPoPageProps> = () => {
   const [estimationForm, setEstimationForm] = useState<
     Partial<IEstimationForm>
   >({});
-  const [subs, setSubs] = useState<RealtimeChannel[]>([]);
   const dispatch = useAppDispatch();
   const currentSession = useAppSelector((state) => state.session.current);
   const currentEstimations = useAppSelector(
     (state) => state.estimation.current
   );
-  const estimationStream = useAppSelector(selectEstimationStream);
+  const estimationStream = useAppSelector(selectEstimationChangeStream);
 
   //get session ID
   const { search } = useLocation();
-
-  useEffect(() => {
-    console.log("estimationStream", estimationStream);
-  }, [estimationStream]);
 
   const sessionId = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -54,30 +46,14 @@ const PoPage: React.FC<IPoPageProps> = () => {
     return sessionId;
   }, [search]);
 
-  const streamEstimationChanges = useSelector(selectEstimationStream);
-
   // Initial
   useEffect(() => {
     // initial fetch of session Object
-    console.log("sessionId", sessionId);
     if (sessionId) {
       getSession(sessionId);
       getEstimations(sessionId);
-
-      const subscription = estimationService
-        .changes("session_id", sessionId, (payload) => {
-          dispatch(setEstimationStream(payload));
-        })
-        .subscribe();
-
-      setSubs((prevSubs) => [...prevSubs, subscription]);
-    } else {
-      // redirect logic here
+      subscribeToEstimation(sessionId);
     }
-
-    return () => {
-      subs.forEach((sub) => sub.unsubscribe());
-    };
   }, []);
 
   // Triggered by changes in the stream
@@ -85,7 +61,7 @@ const PoPage: React.FC<IPoPageProps> = () => {
     if (sessionId) {
       getEstimations(sessionId);
     }
-  }, [streamEstimationChanges]);
+  }, [estimationStream]);
 
   const getEstimations = (sessionId: Session["id"]): void => {
     dispatch(fetchEstimationBySessionId(sessionId));
@@ -93,6 +69,10 @@ const PoPage: React.FC<IPoPageProps> = () => {
 
   const getSession = (sessionId: Session["id"]): void => {
     dispatch(fetchSessionById(sessionId));
+  };
+
+  const subscribeToEstimation = (sessionId: Session["id"]): void => {
+    dispatch(subscribeToEstimationChanges(sessionId));
   };
 
   const onEstimationFormInputChange = (
@@ -191,7 +171,7 @@ const PoPage: React.FC<IPoPageProps> = () => {
     ) : (
       <h4> No Estimations</h4>
     );
-  }, [currentSession, currentEstimations, streamEstimationChanges]);
+  }, [currentSession, currentEstimations, estimationStream]);
 
   return (
     <div id="po-page">

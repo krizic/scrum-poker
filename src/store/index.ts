@@ -13,15 +13,14 @@ export {
   selectActiveEstimationForPlayer,
   selectCurrentSelectedPlayerEstimation,
   selectActiveEstimation,
-  selectEstimationChangeStream,
-  subscribeToEstimationChanges,
 } from "./features/estimation/estimationSlice";
 
 export {
-  selectEstimationStream,
   setEstimationStream,
-  selectVotesStream,
-  setVotesStream,
+  selectEstimationChangeStream,
+  setVoteStream,
+  selectVotesChangeStream,
+  subscribeToEstimationChanges,
 } from "./features/stream/streamSlice";
 
 export {

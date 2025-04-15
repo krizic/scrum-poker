@@ -14,7 +14,7 @@ import EstimationChart from "../estimation-chart/estimation-chart";
 import EstimationStatistics from "../est-statistics/est-statistics";
 import { EstimationService, EstimationWithVotes, VoteService } from "../../api";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { selectEstimationStream, useAppSelector } from "../../store";
+import { selectEstimationChangeStream, useAppSelector } from "../../store";
 
 export interface IVotesTableProps {
   estimationId: string;
@@ -28,7 +28,7 @@ const VotesTable: React.FC<IVotesTableProps> = ({ estimationId }) => {
     EstimationWithVotes | undefined
   >(undefined);
 
-  const estimationStream = useAppSelector(selectEstimationStream)
+  const estimationStream = useAppSelector(selectEstimationChangeStream)
 
   const getEstimation = useCallback(() => {
     estimationService
