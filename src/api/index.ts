@@ -9,7 +9,15 @@ export class ApiService {
   private db: PouchDB.Database<ISessionDb>;
 
   private constructor() {
-    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`);
+    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`, {
+      fetch: function (url, opts) {
+        opts.headers = Object.assign(opts.headers || {}, {
+          "Access-Control-Allow-Origin": "*",
+        });
+        console.log("FETCH heade", opts.headers);
+        return PouchDB.fetch(url, opts);
+      },
+    });
     console.log("API SERVICE", process.env.REACT_APP_API);
   }
 

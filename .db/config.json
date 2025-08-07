@@ -5,5 +5,14 @@
   "log": {
     "level": "none",
     "file": ".db/log.txt"
+  },
+  "httpd": {
+    "enable_cors": true
+  },
+  "cors": {
+    "origins": "http://localhost:3000",
+    "credentials": true,
+    "headers": "accept, authorization, content-type, origin, referer",
+    "methods": "GET, PUT, POST, HEAD, DELETE, OPTIONS"
   }
 }
