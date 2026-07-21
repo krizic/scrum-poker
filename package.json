@@ -8,10 +8,22 @@
   },
   "scripts": {
     "dev": "pnpm --filter @scrum-poker/web dev",
+    "dev:up": "pnpm db:up && pnpm dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "setup": "pnpm install && pnpm db:setup",
+    "env:setup": "node scripts/setup-local-env.mjs",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose stop db",
+    "db:reset": "docker compose down -v",
+    "db:generate": "pnpm --filter @scrum-poker/db run db:generate",
+    "db:migrate": "pnpm --filter @scrum-poker/db run db:migrate",
+    "db:deploy": "pnpm --filter @scrum-poker/db run db:deploy",
+    "db:seed": "pnpm --filter @scrum-poker/db run db:seed",
+    "db:studio": "pnpm --filter @scrum-poker/db run db:studio",
+    "db:setup": "pnpm env:setup && pnpm db:up && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {
     "turbo": "^2.5.8"
