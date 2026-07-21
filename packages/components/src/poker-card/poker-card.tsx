@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Spinner, cn } from "@scrum-poker/ui";
 import { gravatarUrl } from "../lib/gravatar";
-import { patternUrl, DEFAULT_PATTERN } from "../lib/deck";
+import { cardBackStyle, DEFAULT_PATTERN } from "../lib/deck";
 
 export interface PokerCardProps {
   /** Which face to render. `front` shows the value; `back` shows the pattern. */
@@ -12,7 +12,7 @@ export interface PokerCardProps {
   voteValue?: string;
   voterUsername?: string;
   voterEmail?: string;
-  /** Card-back pattern id (asset in `public/patterns`). */
+  /** Card-back pattern id (a CSS pattern from `@scrum-poker/components` deck). */
   voterPattern?: string;
   /** Show the voter's gravatar + name on the face. */
   withProfilePic?: boolean;
@@ -155,12 +155,16 @@ export const PokerCard = React.forwardRef<HTMLElement, PokerCardProps>(
           "border border-brand-900/40 bg-surface-inverse shadow-card",
         )}
       >
-        {/* Decorative pattern back. */}
-        <img
-          src={patternUrl(voterPattern)}
-          alt=""
+        {/* Decorative CSS pattern back (no image asset — always crisp). */}
+        <span
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover"
+          style={cardBackStyle(voterPattern)}
+          className="absolute inset-0"
+        />
+        {/* Premium inset frame: soft light edge over a subtle dark vignette. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-card shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14),inset_0_0_28px_rgba(0,0,0,0.35)]"
         />
         <span className="relative flex h-full w-full flex-col items-center justify-around p-3">
           {withProfilePic ? <Avatar email={voterEmail} /> : null}
