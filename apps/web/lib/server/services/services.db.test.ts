@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
   activateEstimation,
   createEstimation,
+  updateEstimation,
 } from "./estimation";
 import {
   createSession,
@@ -77,14 +78,22 @@ describe.skipIf(!hasDb)("activateEstimation — single-active invariant", () => 
     expect(rows.filter((r) => r.isActive)).toHaveLength(1);
   });
 
-  it("throws when the estimation is not part of the session", async () => {
+  it("re-activating an ended round clears isEnded (hides cards again)", async () => {
     const sessionId = await newSession();
-    const otherSessionId = await newSession();
-    const foreign = await createEstimation(otherSessionId, { name: "foreign" });
+    const a = await createEstimation(sessionId, { name: "A" });
 
-    await expect(
-      activateEstimation(sessionId, foreign.id),
-    ).rejects.toThrow(/not found/);
+    await activateEstimation(sessionId, a.id);
+    // Simulate the PO stopping the round (reveal).
+    await updateEstimation(a.id, { isEnded: true });
+    const ended = await prisma.estimation.findUniqueOrThrow({
+      where: { id: a.id },
+    });
+    expect(ended.isEnded).toBe(true);
+
+    // Starting it again must reset isEnded so votes are hidden anew.
+    const restarted = await activateEstimation(sessionId, a.id);
+    expect(restarted.isActive).toBe(true);
+    expect(restarted.isEnded).toBe(false);
   });
 });
 

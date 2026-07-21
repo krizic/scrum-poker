@@ -67,6 +67,45 @@ export async function getSession(id: string): Promise<Session | null> {
 }
 
 /**
+ * Lean, PIN-safe session summary for the join gate. Unlike {@link getSession}
+ * it never returns the `pin` (only whether one is required) and skips the
+ * estimations/votes graph, so it is safe to render before a developer has
+ * proven knowledge of the PIN.
+ */
+export interface SessionMeta {
+  id: string;
+  name: string | null;
+  hasPin: boolean;
+}
+
+export async function getSessionMeta(id: string): Promise<SessionMeta | null> {
+  const row = await prisma.session.findUnique({
+    where: { id },
+    select: { id: true, name: true, pin: true },
+  });
+  if (!row) return null;
+  return { id: row.id, name: row.name ?? null, hasPin: Boolean(row.pin) };
+}
+
+/**
+ * Verify a developer-supplied PIN against the session's PIN. Returns `true`
+ * when the session has no PIN (open join) or the supplied PIN matches. The PIN
+ * itself never leaves the server.
+ */
+export async function verifySessionPin(
+  id: string,
+  pin: string,
+): Promise<boolean> {
+  const row = await prisma.session.findUnique({
+    where: { id },
+    select: { pin: true },
+  });
+  if (!row) return false;
+  if (!row.pin) return true;
+  return row.pin === pin.trim();
+}
+
+/**
  * Look up a session by its join PIN. The legacy app joined sessions by PIN from
  * the Start page; `pin` is not unique in the schema, so the most recently
  * created match wins. Returns the full graph like {@link getSession}.
