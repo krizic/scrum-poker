@@ -40,5 +40,8 @@ export {
   CARD_DECK,
   DEFAULT_PATTERN,
   PATTERN_OPTIONS,
-  patternUrl,
+  CARD_BACK_PATTERNS,
+  type CardBackPattern,
+  cardBackStyle,
+  normalizePattern,
 } from "./lib/deck";

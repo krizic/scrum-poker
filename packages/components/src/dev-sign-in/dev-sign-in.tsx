@@ -15,7 +15,7 @@ import {
 import { User, Mail, Palette, LogIn } from "lucide-react";
 import type { UserInfo } from "@scrum-poker/types";
 import { PokerCard } from "../poker-card/poker-card";
-import { PATTERN_OPTIONS, DEFAULT_PATTERN } from "../lib/deck";
+import { PATTERN_OPTIONS, normalizePattern } from "../lib/deck";
 
 export interface DevSignInProps {
   /** Emitted with the completed identity when the form is submitted. */
@@ -42,7 +42,7 @@ export function DevSignIn({
   );
   const [email, setEmail] = React.useState(defaultValues?.email ?? "");
   const [pattern, setPattern] = React.useState(
-    defaultValues?.pattern ?? DEFAULT_PATTERN,
+    normalizePattern(defaultValues?.pattern),
   );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
