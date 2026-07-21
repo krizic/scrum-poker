@@ -1,8 +1,8 @@
 # scrum-poker
 
-Real-time planning poker for agile estimation. Create or join a session by PIN,
-have developers vote on estimations, and let the product owner reveal votes,
-view statistics, and import estimations from CSV.
+Real-time planning poker for agile estimation. A product owner creates a session
+and shares its PIN; developers join by PIN and vote on estimations, and the
+product owner reveals votes, views statistics, and imports estimations from CSV.
 
 Built as a **pnpm workspace monorepo** on **Next.js 16** (App Router, React 19,
 Server Components by default) with **Tailwind CSS v4**, **Prisma 7 + PostgreSQL**,
@@ -40,7 +40,7 @@ consumed server-side only.
 
 | Route  | Role          | Purpose                                                                           |
 | ------ | ------------- | --------------------------------------------------------------------------------- |
-| `/`    | Start         | Create or join a session by PIN; capture and store local identity (localStorage). |
+| `/`    | Start         | Product Owner creates a session; Developers join by PIN. Captures and stores local identity (localStorage). |
 | `/dev` | Developer     | Vote on the active estimation; live updates via SSE.                              |
 | `/po`  | Product Owner | Create/manage estimations, activate & reveal, view stats (nivo), import CSV.      |
 
