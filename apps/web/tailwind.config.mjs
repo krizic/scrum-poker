@@ -14,7 +14,7 @@ export default {
     // Workspace UI sources — their Tailwind classes must be scanned so the
     // primitives compile when consumed here.
     "../../packages/ui/src/**/*.{ts,tsx}",
-    // Future:
-    // "../../packages/components/src/**/*.{ts,tsx}",
+    // Workspace composed components — their Tailwind classes must be scanned too.
+    "../../packages/components/src/**/*.{ts,tsx}",
   ],
 };
