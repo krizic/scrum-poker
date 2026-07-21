@@ -1,7 +1,90 @@
 # scrum-poker
 
-> Migration in progress to Next.js 16 + pnpm workspaces. The full README is
-> reworked in issue #19; this section documents the Docker deploy (issue #17).
+Real-time planning poker for agile estimation. Create or join a session by PIN,
+have developers vote on estimations, and let the product owner reveal votes,
+view statistics, and import estimations from CSV.
+
+Built as a **pnpm workspace monorepo** on **Next.js 16** (App Router, React 19,
+Server Components by default) with **Tailwind CSS v4**, **Prisma 7 + PostgreSQL**,
+and **realtime updates via Server-Sent Events backed by Postgres `LISTEN/NOTIFY`**.
+Errors are reported through the **Sentry** Next.js SDK. Deployment is a
+self-hosted **Docker** image (Next standalone Node server) plus Postgres.
+
+## Architecture
+
+The repo is a pnpm workspace. Internal packages use the `workspace:*` protocol
+and the `@scrum-poker/*` scope. The dependency graph is a DAG
+(`apps/web → components → ui`, `apps/web → db`, everything → `types`/`utils`/`config`).
+
+```
+scrum-poker/
+├─ apps/
+│  └─ web/                 # @scrum-poker/web — Next.js 16 App Router app + api routes
+├─ packages/
+│  ├─ config/             # @scrum-poker/config — shared tsconfig, ESLint, Tailwind & Vitest presets
+│  ├─ types/              # @scrum-poker/types — framework-agnostic domain types (Session/Estimation/Vote)
+│  ├─ db/                 # @scrum-poker/db — Prisma 7 schema, migrations, seed, client, pg_notify triggers
+│  ├─ utils/              # @scrum-poker/utils — pure helpers (vote stats, chart shaping, CSV)
+│  ├─ ui/                 # @scrum-poker/ui — Tailwind + Radix primitives (Button, Card, Table, Reveal…)
+│  └─ components/         # @scrum-poker/components — composed app components (poker card, votes, charts…)
+├─ pnpm-workspace.yaml
+├─ turbo.json             # task runner (build/typecheck/lint/test DAG)
+├─ docker-compose.yml     # web + postgres
+└─ Dockerfile             # Next.js standalone image (builds only apps/web)
+```
+
+`packages/db` is the **only** package that imports `@prisma/client`, and it is
+consumed server-side only.
+
+### Roles & routes
+
+| Route  | Role          | Purpose                                                                           |
+| ------ | ------------- | --------------------------------------------------------------------------------- |
+| `/`    | Start         | Create or join a session by PIN; capture and store local identity (localStorage). |
+| `/dev` | Developer     | Vote on the active estimation; live updates via SSE.                              |
+| `/po`  | Product Owner | Create/manage estimations, activate & reveal, view stats (nivo), import CSV.      |
+
+## Local development
+
+Requires **Node 22.13+** and **pnpm 11.15.1** (pinned via the root
+`packageManager` field). Postgres is needed for data + realtime — the quickest
+path is an ephemeral container.
+
+```bash
+# 1. install the whole workspace (also generates the Prisma client)
+pnpm install
+
+# 2. start a local Postgres (or point DATABASE_URL at your own)
+docker run -d --name sp-dev-pg -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=scrumpoker -p 5432:5432 postgres:16-alpine
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/scrumpoker
+
+# 3. apply migrations (schema + pg_notify triggers) and (optionally) seed
+pnpm --filter @scrum-poker/db run db:migrate
+pnpm --filter @scrum-poker/db run db:seed   # optional sample data
+
+# 4. run the app (http://localhost:3000)
+pnpm --filter @scrum-poker/web dev          # or: pnpm dev
+```
+
+Workspace-wide scripts (delegate across every package, matching CI):
+
+```bash
+pnpm typecheck   # pnpm -r typecheck
+pnpm lint        # pnpm -r lint
+pnpm build       # pnpm -r build
+pnpm test        # pnpm -r test
+```
+
+`turbo run <task>` is also available for cached, dependency-ordered runs.
+
+### Environment variables
+
+Copy `.env.example` to `.env` and adjust. The key variable is `DATABASE_URL`,
+used by Prisma (queries + `migrate deploy`) **and** the direct pg
+`LISTEN/NOTIFY` realtime hub. Sentry DSNs are optional (leave blank to disable);
+browser-exposed values must use the `NEXT_PUBLIC_*` prefix. **Never commit real
+secrets.**
 
 ## Run with Docker
 
@@ -53,10 +136,7 @@ docker run --rm -p 3000:3000 -e DATABASE_URL=postgresql://... scrum-poker-web
 ```
 
 The image is multi-stage (`deps` → `build` → `runner`, plus an isolated `migrator`
-toolkit). It builds **only** the `apps/web` workspace app; the legacy CRA root app
-is excluded via `.dockerignore` and is not part of the image.
-
----
+toolkit). It builds **only** the `apps/web` workspace app.
 
 ## Testing & CI
 
@@ -106,20 +186,6 @@ migrations (`prisma migrate deploy`) before the test step, so the DB-backed
 invariant tests — one-vote-per-user and single-active-estimation — actually run
 and turn CI red if those guarantees regress.
 
----
+## License
 
-## Skills
-
-### DONE (22-04-2020)
-- new Map()
-- new Set()
-- Array Global Object
-- Iterating through Objects
-- React Charts
-- Array.reduce(\*, Map)
-- React component creation
-- Passing Props from parent component
-- Conditional Rendering
-- Importing styles in component
-- Assigning class to component (className)
-- Finding, Evaluating and Adding new NPM package (library)
+MIT — see [LICENCE](./LICENCE).
