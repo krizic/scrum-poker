@@ -2,29 +2,26 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-# Dedupe React typings to a single v19 across the workspace. Without this, the
-# legacy CRA app + Prisma-studio bring in @types/react@18, which collides with
-# the Next 16 / React 19 packages when apps/web type-checks the transpiled
-# @scrum-poker/components sources ("ForwardRefExoticComponent cannot be used as
-# a JSX component"). Legacy CRA is retired in the cutover phase (#19).
+# Dedupe React typings to a single v19 across the workspace. Without this,
+# transitive deps (e.g. Prisma Studio) can pull in @types/react@18, which
+# collides with the Next 16 / React 19 packages when apps/web type-checks the
+# transpiled @scrum-poker/components sources ("ForwardRefExoticComponent cannot
+# be used as a JSX component").
 overrides:
   '@types/react': '19.2.17'
   '@types/react-dom': '19.2.3'
 
-# Keep pnpm's approved native build allowlist (used by the legacy CRA app deps).
+# pnpm's approved native build allowlist for the new stack (Next.js 16 +
+# Prisma 7 + Sentry + Vitest). Legacy CRA/PouchDB build deps (core-js,
+# git-stats, leveldown, sqlite3) were removed in the cutover (#19).
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/client': true
   '@prisma/engines': true
   '@sentry/cli': true
-  core-js: true
-  core-js-pure: true
   esbuild: true
-  git-stats: true
-  leveldown: true
   prisma: true
   sharp: true
-  sqlite3: true
 
 minimumReleaseAgeExclude:
   - '@next/env@16.2.11'
