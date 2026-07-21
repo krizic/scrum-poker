@@ -2,6 +2,10 @@
   "name": "scrum-poker",
   "version": "0.1.3",
   "private": true,
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@nivo/pie": "^0.80.0",
     "@sentry/react": "^7.46.0",
@@ -38,7 +42,11 @@
     "server": "pouchdb-server --dir .db --config .db/config.json",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "stats": "git-stats -f ../"
+    "stats": "git-stats -f ../",
+    "build:packages": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test:packages": "pnpm -r test"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -63,7 +71,8 @@
     "git-stats": "^3.1.1",
     "pouchdb-server": "^4.2.0",
     "react-app-env": "^1.2.3",
-    "sass": "^1.60.0"
+    "sass": "^1.60.0",
+    "turbo": "^2.5.8"
   },
   "homepage": "/"
 }
