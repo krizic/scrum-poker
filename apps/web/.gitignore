@@ -1,0 +1,11 @@
+# Next.js build output & framework-managed ambient types.
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# Local environment files (never commit real secrets; see .env.example).
+.env
+.env*.local
+
+# Sentry
+.sentryclirc
