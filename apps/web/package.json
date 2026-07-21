@@ -1,0 +1,37 @@
+{
+  "name": "@scrum-poker/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js 16 (App Router) shell for scrum-poker. Server Components by default, Tailwind wired to @scrum-poker/config's shared preset, Sentry (Next SDK) for client + server, standalone output for Docker. Thin scaffolding only — real routes/UI/services land in later issues.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo \"@scrum-poker/web: no tests yet\""
+  },
+  "dependencies": {
+    "@scrum-poker/db": "workspace:*",
+    "@scrum-poker/types": "workspace:*",
+    "@sentry/nextjs": "^10.67.0",
+    "next": "^16.2.11",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@scrum-poker/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^20.11.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.13.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.10.0"
+  }
+}
