@@ -1,24 +1,15 @@
 import PouchDB from "pouchdb";
 import { v4 as uuid } from "uuid";
 
-import { ISessionDb, IEstimation } from "./interfaces";
 import { IUserInfo } from "../services";
+import { IEstimation, ISessionDb } from "./interfaces";
 
 export class ApiService {
   readonly db_name = "sessions";
   private db: PouchDB.Database<ISessionDb>;
 
   private constructor() {
-    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`, {
-      fetch: function (url, opts) {
-        opts.headers = Object.assign(opts.headers || {}, {
-          "Access-Control-Allow-Origin": "*",
-        });
-        console.log("FETCH heade", opts.headers);
-        return PouchDB.fetch(url, opts);
-      },
-    });
-    console.log("API SERVICE", process.env.REACT_APP_API);
+    this.db = new PouchDB(`${process.env.REACT_APP_API}${this.db_name}`);
   }
 
   info() {
