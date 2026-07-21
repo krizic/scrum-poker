@@ -495,25 +495,8 @@ function PoFlow({
 
       <ShareCard session={session} />
 
-      <div className="grid gap-card lg:grid-cols-2">
-        <CreateEstimationForm onCreate={handleCreate} />
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle className="text-base">Import from CSV</CardTitle>
-          </CardHeader>
-          <Separator />
-          <CardContent className="pt-card">
-            <ImportZone
-              onImport={handleImport}
-              onError={(message) =>
-                toastError("Couldn't read CSV", message)
-              }
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Estimation list + management panel (stats / chart / reveal). */}
+      {/* Estimation list + management panel (stats / chart / reveal) — the
+          primary PO workspace, kept high on the page for quick access. */}
       <Card className="w-full">
         <CardHeader className="flex-row items-center justify-between gap-2">
           <CardTitle className="text-base">Estimations</CardTitle>
@@ -541,6 +524,25 @@ function PoFlow({
           />
         </CardContent>
       </Card>
+
+      {/* Secondary tools: add a round manually or import from CSV. */}
+      <div className="grid gap-card lg:grid-cols-2">
+        <CreateEstimationForm onCreate={handleCreate} />
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-base">Import from CSV</CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-card">
+            <ImportZone
+              onImport={handleImport}
+              onError={(message) =>
+                toastError("Couldn't read CSV", message)
+              }
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       <EditEstimationDialog
         estimation={selected}

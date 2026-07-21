@@ -31,7 +31,9 @@ const preset = {
           800: "#085722",
           900: "#08481e",
           950: "#02280f",
-          DEFAULT: "#01a131",
+          // DEFAULT darkened from #01a131 to meet WCAG AA (≥4.5:1 vs white) for
+          // both `text-brand` links and white-on-brand button labels (5.48:1).
+          DEFAULT: "#087a2b",
           foreground: "#ffffff",
         },
         // Success — semantic alias of the brand green, kept separate so intent is
@@ -45,7 +47,7 @@ const preset = {
           500: "#01a131",
           600: "#018a2b",
           700: "#046f26",
-          DEFAULT: "#01a131",
+          DEFAULT: "#087a2b",
           foreground: "#ffffff",
         },
         // Warning — cautionary states (e.g. "no votes for this story").
@@ -92,19 +94,21 @@ const preset = {
           inverse: "#f7f9f8",
         },
         // Muted — secondary text (`text-muted`) and low-emphasis fills.
+        // Values darkened for WCAG AA: DEFAULT 5.76:1 on white / 5.10:1 on
+        // surface-muted; foreground (placeholders) 4.69:1 on white.
         muted: {
-          DEFAULT: "#64756c",
-          foreground: "#8a9a90",
+          DEFAULT: "#586a60",
+          foreground: "#66786e",
         },
         // Borders / hairlines.
         border: {
           DEFAULT: "#dde5e1",
           strong: "#c3cec8",
-          focus: "#01a131",
+          focus: "#087a2b",
         },
         // Focus ring color token.
         ring: {
-          DEFAULT: "#01a131",
+          DEFAULT: "#087a2b",
         },
       },
       borderRadius: {
@@ -148,7 +152,7 @@ const preset = {
       },
       fontSize: {
         // Oversized numeral on the poker-card face (`text-card-face`).
-        "card-face": ["3.5rem", { lineHeight: "1" }],
+        "card-face": ["5.5rem", { lineHeight: "1" }],
       },
       transitionDuration: {
         fast: "150ms",
