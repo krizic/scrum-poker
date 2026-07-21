@@ -142,4 +142,33 @@ describe.skipIf(!hasDb)("castVote — upsert on (estimationId, voterId)", () => 
     });
     expect(votes).toHaveLength(1);
   });
+
+  it("enforces one-vote-per-user at the DB level via the @@unique([estimationId, voterId]) constraint", async () => {
+    // Guards the invariant at the schema layer: even a raw insert that bypasses
+    // the `castVote` upsert must be rejected by the unique index. If someone
+    // removes `@@unique([estimationId, voterId])`, this assertion turns CI red.
+    const sessionId = await newSession();
+    const estimation = await createEstimation(sessionId, { name: "story" });
+    const base = {
+      estimationId: estimation.id,
+      voterId: "voter-dup",
+      voterName: "Dup",
+      voterEmail: "dup@example.com",
+      pattern: "retro",
+    };
+
+    await prisma.vote.create({ data: { ...base, value: "3" } });
+
+    // A second row for the same (estimationId, voterId) violates the unique
+    // constraint (Prisma error code P2002).
+    await expect(
+      prisma.vote.create({ data: { ...base, value: "8" } }),
+    ).rejects.toMatchObject({ code: "P2002" });
+
+    const votes = await prisma.vote.findMany({
+      where: { estimationId: estimation.id },
+    });
+    expect(votes).toHaveLength(1);
+  });
 });
+
