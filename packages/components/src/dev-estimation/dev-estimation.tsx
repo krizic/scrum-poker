@@ -9,7 +9,7 @@ import {
   Separator,
   cn,
 } from "@scrum-poker/ui";
-import { Layers, Coffee } from "lucide-react";
+import { Layers, Coffee, Lock } from "lucide-react";
 import type { CardValue, Estimation, UserInfo } from "@scrum-poker/types";
 import { PokerCard } from "../poker-card/poker-card";
 import { CARD_DECK } from "../lib/deck";
@@ -63,6 +63,11 @@ export function DevEstimation({
     );
   }
 
+  // Once the PO ends the round (`isEnded`) voting is closed — the deck is locked
+  // so developers can no longer cast or change a vote; they read the outcome from
+  // the reveal roster instead.
+  const votingClosed = Boolean(estimation.isEnded);
+
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader>
@@ -81,7 +86,11 @@ export function DevEstimation({
         <div
           role="radiogroup"
           aria-label="Pick your estimate"
-          className="flex flex-wrap justify-center gap-4"
+          aria-disabled={votingClosed || undefined}
+          className={cn(
+            "flex flex-wrap justify-center gap-4",
+            votingClosed && "pointer-events-none opacity-60",
+          )}
         >
           {deck.map((value) => (
             <PokerCard
@@ -92,15 +101,22 @@ export function DevEstimation({
               voterEmail={userInfo.email}
               selected={value === selectedValue}
               isLoading={value === loadingValue}
-              onSelect={() => onVote(value)}
+              onSelect={votingClosed ? undefined : () => onVote(value)}
               className="animate-content-in motion-reduce:animate-none"
             />
           ))}
         </div>
-        <p className="mt-card flex items-center justify-center gap-1.5 text-xs text-muted">
-          <Coffee aria-hidden="true" className="size-3.5" />
-          Pick “?” if unsure or “☕” for a break.
-        </p>
+        {votingClosed ? (
+          <p className="mt-card flex items-center justify-center gap-1.5 text-xs font-medium text-muted">
+            <Lock aria-hidden="true" className="size-3.5" />
+            Voting closed — waiting for the product owner to reveal results.
+          </p>
+        ) : (
+          <p className="mt-card flex items-center justify-center gap-1.5 text-xs text-muted">
+            <Coffee aria-hidden="true" className="size-3.5" />
+            Pick “?” if unsure or “☕” for a break.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,9 +1,13 @@
 import { prisma } from "@scrum-poker/db";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { activateEstimation, createEstimation } from "./estimation";
+import {
+  activateEstimation,
+  createEstimation,
+  updateEstimation,
+} from "./estimation";
 import { createSession, deleteSession, getSession } from "./session";
-import { castVote } from "./vote";
+import { castVote, VOTING_CLOSED_ERROR } from "./vote";
 import type { UserInfo } from "@scrum-poker/types";
 
 /**
@@ -93,5 +97,30 @@ describe.skipIf(!hasDb)("/dev vote path — castVote → getSession", () => {
       ?.find((e) => e.isActive)
       ?.votes?.find((v) => v.voterId === developer.id);
     expect(kept?.value).toBe("13");
+  });
+
+  it("rejects a vote once the round is ended (isEnded), leaving the value unchanged", async () => {
+    const session = await createSession({ name: "dev-ended-test" });
+    createdSessionIds.push(session.id);
+    const story = await createEstimation(session.id, { name: "Story C" });
+    await activateEstimation(session.id, story.id);
+
+    // Developer votes "5" while the round is live.
+    await castVote(story.id, developer, "5");
+
+    // PO ends/reveals the round (as the Stop button does).
+    await updateEstimation(story.id, { isEnded: true });
+
+    // A further vote attempt must be rejected…
+    await expect(castVote(story.id, developer, "8")).rejects.toThrow(
+      VOTING_CLOSED_ERROR,
+    );
+
+    // …and the stored value must remain the pre-reveal "5".
+    const after = await getSession(session.id);
+    const kept = after?.estimations
+      ?.find((e) => e.id === story.id)
+      ?.votes?.find((v) => v.voterId === developer.id);
+    expect(kept?.value).toBe("5");
   });
 });
