@@ -20,6 +20,7 @@
     "@scrum-poker/ui": "workspace:*",
     "@scrum-poker/utils": "workspace:*",
     "@sentry/nextjs": "^10.67.0",
+    "lucide-react": "^0.474.0",
     "next": "^16.2.11",
     "pg": "^8.22.0",
     "react": "^19.2.0",
