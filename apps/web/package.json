@@ -16,6 +16,7 @@
   "dependencies": {
     "@scrum-poker/db": "workspace:*",
     "@scrum-poker/types": "workspace:*",
+    "@scrum-poker/ui": "workspace:*",
     "@sentry/nextjs": "^10.67.0",
     "next": "^16.2.11",
     "react": "^19.2.0",
