@@ -40,7 +40,11 @@ export function EstimationPanel({
 }: EstimationPanelProps) {
   const votes = estimation.votes ?? [];
   const hasVotes = votes.length > 0;
-  const isActive = estimation.isActive;
+  // State model: not-started (!isActive) → live (isActive && !isEnded) →
+  // revealed (isEnded). The PO controls and reveal all key off these two
+  // derived states, mirroring the developer view (which reveals on `isEnded`).
+  const votingLive = estimation.isActive && !estimation.isEnded;
+  const revealed = estimation.isEnded;
 
   return (
     <Card className={cn("w-full overflow-hidden", className)}>
@@ -48,7 +52,7 @@ export function EstimationPanel({
         <Button
           size="sm"
           variant="primary"
-          disabled={isActive}
+          disabled={votingLive}
           onClick={() => onStart?.(estimation)}
         >
           <Play aria-hidden="true" />
@@ -57,7 +61,7 @@ export function EstimationPanel({
         <Button
           size="sm"
           variant="danger"
-          disabled={!isActive}
+          disabled={!votingLive}
           onClick={() => onStop?.(estimation)}
         >
           <Square aria-hidden="true" />
@@ -66,13 +70,13 @@ export function EstimationPanel({
         <Button
           size="sm"
           variant="outline"
-          disabled={isActive}
+          disabled={votingLive}
           onClick={() => onDelete?.(estimation)}
         >
           <Trash2 aria-hidden="true" />
           Delete
         </Button>
-        {isActive ? (
+        {votingLive ? (
           <span className="ml-auto inline-flex items-center gap-1.5 rounded-pill bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
             <span className="size-2 animate-pulse rounded-pill bg-brand" />
             Voting live
@@ -95,7 +99,7 @@ export function EstimationPanel({
           </p>
         ) : (
           <>
-            {!isActive ? (
+            {revealed ? (
               <div className="grid gap-card md:grid-cols-2">
                 <EstStatistics estimation={estimation} />
                 <EstimationChart votes={votes} />
@@ -106,7 +110,7 @@ export function EstimationPanel({
                 <CardReveal
                   key={vote.id}
                   vote={vote}
-                  shouldHide={isActive}
+                  shouldHide={!revealed}
                 />
               ))}
             </div>

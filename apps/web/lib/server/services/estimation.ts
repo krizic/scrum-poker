@@ -89,7 +89,9 @@ export async function updateEstimation(
  *   ordered by `id`. Acquiring locks in a deterministic order means concurrent
  *   activations of different estimations in the same session serialize cleanly
  *   (no write-skew, no deadlock) and converge to exactly one active estimation.
- * - Then flips every other estimation inactive and the target active.
+ * - Then flips every other estimation inactive and the target active. Activating
+ *   also clears `isEnded` on the target so re-running a previously revealed round
+ *   hides the votes again.
  *
  * @throws {Error} when the estimation does not exist in the given session.
  */
@@ -114,7 +116,7 @@ export async function activateEstimation(
 
     const { count } = await tx.estimation.updateMany({
       where: { id: estimationId, sessionId },
-      data: { isActive: true },
+      data: { isActive: true, isEnded: false },
     });
 
     if (count === 0) {

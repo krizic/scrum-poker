@@ -86,10 +86,14 @@ export function Estimations({
               )}
             >
               <span className="truncate">{estimation.name}</span>
-              {estimation.isActive ? (
+              {estimation.isActive && !estimation.isEnded ? (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-brand-50 px-2 py-0.5 text-[0.65rem] font-semibold uppercase text-brand-700">
                   <span className="size-1.5 animate-pulse rounded-pill bg-brand" />
                   Active
+                </span>
+              ) : estimation.isEnded ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-surface-muted px-2 py-0.5 text-[0.65rem] font-semibold uppercase text-muted">
+                  Revealed
                 </span>
               ) : null}
             </button>

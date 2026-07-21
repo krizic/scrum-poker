@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * Start route — client island (create / join a session + local identity).
+ * Start route — client island (create a session + local identity).
  *
  * Replaces the legacy `src/pages/start.tsx` (+ `start.scss`, Semantic UI). Flow:
  *   1. Capture identity via `DevSignIn` (username / email / pattern) and persist
  *      it to localStorage (`lib/client/identity.ts`, ported `LocalUserInfoApi`).
- *      No identity ⇒ the create/join UI is gated behind sign-in (AC: "creating
- *      without an identity prompts for one first").
+ *      No identity ⇒ the UI is gated behind sign-in (AC: "creating without an
+ *      identity prompts for one first").
  *   2. Pick a role (Developer / Product Owner) — the role scopes the action:
- *      Product Owners CREATE a session; Developers JOIN one by PIN (they get
- *      invited via the shared PIN). Legacy kept these as separate pages; we keep
- *      the split and carry the choice into the route.
+ *      Product Owners CREATE a session; Developers do NOT join from here — they
+ *      open the invite link the PO shares (`/dev?session=<id>`), which prompts
+ *      for a PIN when the session has one (see `app/(developer)/dev-pin-gate`).
  *   3. Product Owner: create a session (optional name + PIN) via the
- *      `createSessionAction` Server Action. Developer: join by PIN via
- *      `joinSessionAction`. On success we remember the session client-side
- *      (`lib/client/sessions.ts`, ported `LocalSessionApi`) and navigate to
- *      `sessionHref(role, id)` — i.e. `/dev?session=<id>` or `/po?session=<id>`
- *      (see `lib/session-route.ts`).
- *   4. Join failures surface a user-facing error (Toast + inline `role="alert"`)
+ *      `createSessionAction` Server Action. On success we remember the session
+ *      client-side (`lib/client/sessions.ts`, ported `LocalSessionApi`) and
+ *      navigate to `sessionHref(role, id)` — i.e. `/po?session=<id>`
+ *      (see `lib/session-route.ts`). Developers see invite-link guidance and can
+ *      reopen recent sessions.
+ *   4. Create failures surface a user-facing error (Toast + inline `role="alert"`)
  *      and do NOT navigate.
  *
  * All styling is Tailwind tokens via `@scrum-poker/ui` / `@scrum-poker/components`
@@ -42,7 +42,7 @@ import {
 } from "@scrum-poker/ui";
 import { DevSignIn } from "@scrum-poker/components";
 import type { UserInfo } from "@scrum-poker/types";
-import { Clock, Code2, LogIn, Plus, UserCog, X } from "lucide-react";
+import { Clock, Code2, Info, Plus, UserCog, X } from "lucide-react";
 
 import { getStoredUserInfo, saveUserInfo } from "@/lib/client/identity";
 import {
@@ -54,7 +54,6 @@ import {
 import { sessionHref, type Role } from "@/lib/session-route";
 import {
   createSessionAction,
-  joinSessionAction,
   type ActionResult,
 } from "./actions";
 
@@ -79,7 +78,6 @@ function StartFlow() {
   const [role, setRole] = React.useState<Role>("dev");
   const [createName, setCreateName] = React.useState("");
   const [createPin, setCreatePin] = React.useState("");
-  const [joinPin, setJoinPin] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
 
   const sessionHeadingRef = React.useRef<HTMLHeadingElement>(null);
@@ -133,21 +131,6 @@ function StartFlow() {
         name: createName,
         pin: createPin,
       });
-      handleResult(result);
-    });
-  };
-
-  const handleJoin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    if (!joinPin.trim()) {
-      const msg = "Enter a session PIN to join.";
-      setError(msg);
-      toast({ variant: "danger", title: "Unable to continue", description: msg });
-      return;
-    }
-    startTransition(async () => {
-      const result = await joinSessionAction({ pin: joinPin });
       handleResult(result);
     });
   };
@@ -299,38 +282,23 @@ function StartFlow() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Join session</CardTitle>
+            <CardTitle>Join a session</CardTitle>
             <CardDescription>
-              Enter the PIN your Product Owner shared to join their round.
+              Developers join from an invite link, not a code entered here.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleJoin} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="join-pin" required>
-                  Session PIN
-                </Label>
-                <Input
-                  id="join-pin"
-                  name="join_pin"
-                  inputMode="numeric"
-                  placeholder="e.g. 1234"
-                  autoComplete="off"
-                  invalid={Boolean(error)}
-                  value={joinPin}
-                  onChange={(e) => setJoinPin(e.target.value)}
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="secondary"
-                loading={pending}
-                className="self-start"
-              >
-                <LogIn aria-hidden="true" />
-                Join session
-              </Button>
-            </form>
+            <div className="flex items-start gap-3 rounded-input border border-border bg-surface-muted px-3 py-3 text-sm text-content">
+              <Info
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-brand"
+              />
+              <p>
+                Ask your Product Owner for the session&rsquo;s invite link and
+                open it to join. If the session has a PIN, you&rsquo;ll be asked
+                for it before joining. Recently opened sessions appear below.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
