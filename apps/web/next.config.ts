@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
 
   // Workspace packages ship raw TypeScript sources (see their `exports` maps),
   // so Next must transpile them rather than treat them as prebuilt deps.
-  transpilePackages: ["@scrum-poker/types", "@scrum-poker/db"],
+  transpilePackages: ["@scrum-poker/types", "@scrum-poker/db", "@scrum-poker/utils"],
 };
 
 // Wrap with Sentry so server-side + edge instrumentation and (optional) source
