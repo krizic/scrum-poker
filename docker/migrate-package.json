@@ -1,0 +1,11 @@
+{
+  "name": "scrum-poker-migrator",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated, lean Prisma toolchain used only to run `prisma migrate deploy` at container startup. Versions are pinned to match the workspace lockfile. Ships alongside packages/db's prisma schema + migrations in the runner stage (issue #17).",
+  "dependencies": {
+    "prisma": "7.9.0",
+    "dotenv": "16.6.1"
+  }
+}
