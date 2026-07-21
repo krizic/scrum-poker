@@ -1,0 +1,5 @@
+# Prisma Client is generated code — regenerate with `pnpm db:generate`.
+src/generated/
+
+# Local environment (never commit real credentials; see .env.example).
+.env

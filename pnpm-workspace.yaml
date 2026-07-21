@@ -5,8 +5,12 @@ packages:
 # Keep pnpm's approved native build allowlist (used by the legacy CRA app deps).
 allowBuilds:
   '@parcel/watcher': true
+  '@prisma/client': true
+  '@prisma/engines': true
   core-js: true
   core-js-pure: true
+  esbuild: true
   git-stats: true
   leveldown: true
+  prisma: true
   sqlite3: true

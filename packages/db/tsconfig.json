@@ -1,0 +1,10 @@
+{
+  "extends": "@scrum-poker/config/tsconfig",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": ["src", "prisma", "prisma.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}
