@@ -111,3 +111,34 @@ export type Serialized<T> = T extends Date
     : T extends object
       ? { [K in keyof T]: Serialized<T[K]> }
       : T;
+
+/**
+ * Which aggregate a realtime change touched. Mirrors the `type` field emitted
+ * by the `pg_notify` DB triggers (`packages/db/prisma/migrations/*_pg_notify_triggers`).
+ */
+export type SessionEventType = "session" | "estimation" | "vote";
+
+/** The DB write operation that produced a realtime change. */
+export type SessionEventOp = "insert" | "update" | "delete";
+
+/**
+ * A small realtime change descriptor fanned out over SSE.
+ *
+ * This is the *exact* JSON shape emitted by the Postgres `pg_notify` triggers on
+ * the per-session channel `session_<sessionId>` (INSERT/UPDATE/DELETE of
+ * Session / Estimation / Vote). It is intentionally a tiny descriptor — not the
+ * changed row — so clients revalidate (re-fetch the session graph) on receipt,
+ * reproducing the legacy PouchDB `onChange` behavior 1:1.
+ *
+ * @see docs/superpowers/specs/2026-07-21-nextjs-migration-design.md — "Real-time design"
+ */
+export interface SessionEvent {
+  /** Which aggregate changed. */
+  type: SessionEventType;
+  /** The write operation. */
+  op: SessionEventOp;
+  /** The session the change belongs to (drives the SSE channel / hub key). */
+  sessionId: string;
+  /** The affected estimation, when applicable (`estimation`/`vote` events). */
+  estimationId: string | null;
+}
