@@ -20,7 +20,12 @@
  * how to reflect success (optimistic selection) / surface errors (toast).
  */
 
-import { castVote, getSession, verifySessionPin } from "@/lib/server/services";
+import {
+  castVote,
+  getSession,
+  verifySessionPin,
+  VOTING_CLOSED_ERROR,
+} from "@/lib/server/services";
 import { markSessionUnlocked } from "@/lib/server/session-unlock";
 import type { CardValue, Session, UserInfo } from "@scrum-poker/types";
 
@@ -91,6 +96,12 @@ export async function castVoteAction(
     const vote = await castVote(estimationId, userInfo, value);
     return { ok: true, value: vote.value ?? null };
   } catch (err) {
+    if (err instanceof Error && err.message === VOTING_CLOSED_ERROR) {
+      return {
+        ok: false,
+        error: "Voting is closed — the product owner ended this round.",
+      };
+    }
     console.error("castVoteAction failed", { sessionId, estimationId }, err);
     return { ok: false, error: "Could not record your vote. Please try again." };
   }

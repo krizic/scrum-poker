@@ -33,12 +33,21 @@ import type { CardValue, UserInfo, Vote } from "@scrum-poker/types";
 import { toVoteIdentity } from "./user-info";
 
 /**
+ * Thrown by {@link castVote} when a developer tries to cast or change a card
+ * value on a round the product owner has already ended. Callers (e.g. the
+ * `castVoteAction` Server Action) can detect it to surface a precise message.
+ */
+export const VOTING_CLOSED_ERROR = "VOTING_CLOSED";
+
+/**
  * Cast or change a vote. `value` is optional: omitting it registers the voter's
  * presence without revealing (or overwriting) a card.
  *
  * @param estimationId - target estimation.
  * @param userInfo - client identity (mapped to `voterId`/`voterName`/… ).
  * @param value - optional card value; omit to register presence / keep existing.
+ * @throws when a card `value` is provided for an estimation that is already
+ *   ended (`isEnded`) — voting is closed once the PO reveals the round.
  */
 export async function castVote(
   estimationId: string,
@@ -46,6 +55,19 @@ export async function castVote(
   value?: CardValue,
 ): Promise<Vote> {
   const identity = toVoteIdentity(userInfo);
+
+  // Guard: once the PO ends the round, developers can no longer cast or change
+  // a card value (the deck is also locked client-side). Presence pings (no
+  // value) are left untouched so late joiners can still be registered.
+  if (value !== undefined) {
+    const estimation = await prisma.estimation.findUnique({
+      where: { id: estimationId },
+      select: { isEnded: true },
+    });
+    if (estimation?.isEnded) {
+      throw new Error(VOTING_CLOSED_ERROR);
+    }
+  }
 
   const row = await prisma.vote.upsert({
     where: {
