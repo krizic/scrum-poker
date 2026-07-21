@@ -1,0 +1,40 @@
+# Keep the Docker build context small. The image builds ONLY the workspace
+# Next.js app (apps/web) + its workspace packages — never the legacy CRA app's
+# build output. See issue #17.
+
+# Dependencies / build artifacts (reinstalled/rebuilt inside the image)
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/coverage
+**/*.tsbuildinfo
+
+# Generated Prisma client (regenerated inside the build stage)
+packages/db/src/generated
+
+# Legacy CRA production build output (root `build/`) — must never leak in
+build
+
+# VCS / tooling
+.git
+.gitignore
+.github
+
+# Env files — NEVER copy real secrets into the image. Values are injected at
+# runtime via docker-compose / the container environment.
+**/.env
+**/.env.*
+*.env
+
+# Docker + compose files themselves (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Misc
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

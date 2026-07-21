@@ -21,8 +21,8 @@ export const DESCRIPTION_HEADER = "Description";
 export interface ImportedEstimation {
   /** From the "Issue key" column. */
   name: string;
-  /** From the "Description" column. */
-  description: string;
+  /** From the "Description" column. Optional — absent when the CSV has no Description column. */
+  description?: string;
 }
 
 /** Thrown when the CSV is structurally unusable (parse errors, missing header). */

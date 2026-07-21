@@ -1,0 +1,10 @@
+# Standalone pnpm "workspace" for the isolated migrator toolkit (issue #17).
+# Its only purpose is to allow Prisma's install scripts to run so the Rust
+# schema-engine binary (used by `prisma migrate deploy`) is fetched for the
+# image's platform. pnpm 11 gates build scripts behind this `allowBuilds` map.
+packages:
+  - '.'
+
+allowBuilds:
+  prisma: true
+  '@prisma/engines': true

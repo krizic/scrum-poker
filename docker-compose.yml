@@ -1,0 +1,62 @@
+# docker-compose for local / self-hosted scrum-poker (issue #17).
+#
+# Brings up Postgres + the Next.js standalone server. On start, the web
+# container applies Prisma migrations (RUN_MIGRATIONS=true) against the db
+# service, then serves on :3000. See ".env.example" for the variables; copy it
+# to ".env" and adjust as needed (compose auto-loads ".env").
+#
+#   docker compose up --build        # build + run
+#   curl http://localhost:3000/api/health   -> {"status":"ok"}
+#   docker compose down -v           # stop + drop the db volume
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-scrumpoker}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      # Exposed for local psql/debugging; remove in locked-down deploys.
+      - "5432:5432"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-scrumpoker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Prisma (migrations + app queries) AND the pg LISTEN/NOTIFY hub both read
+      # DATABASE_URL. `db` is the compose service hostname.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-scrumpoker}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      NODE_ENV: production
+      # Sentry (server) — optional; leave blank to disable.
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      # Public (browser) — optional.
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      # busybox wget (present in node:alpine) — no extra deps needed.
+      test:
+        ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  db-data:
