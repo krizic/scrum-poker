@@ -11,8 +11,10 @@ export default {
   presets: [preset],
   content: [
     "./app/**/*.{ts,tsx}",
-    // Future workspace UI sources will be added here as they land:
-    // "../../packages/ui/src/**/*.{ts,tsx}",
+    // Workspace UI sources — their Tailwind classes must be scanned so the
+    // primitives compile when consumed here.
+    "../../packages/ui/src/**/*.{ts,tsx}",
+    // Future:
     // "../../packages/components/src/**/*.{ts,tsx}",
   ],
 };
