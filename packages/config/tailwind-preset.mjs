@@ -48,6 +48,20 @@ const preset = {
           DEFAULT: "#01a131",
           foreground: "#ffffff",
         },
+        // Warning — cautionary states (e.g. "no votes for this story").
+        warning: {
+          50: "#fefce8",
+          100: "#fef9c3",
+          200: "#fde68a",
+          300: "#fcd34d",
+          400: "#fbbf24",
+          500: "#f59e0b",
+          600: "#d97706",
+          700: "#b45309",
+          800: "#92400e",
+          DEFAULT: "#d97706",
+          foreground: "#ffffff",
+        },
         // Danger — destructive/error states and validation.
         danger: {
           50: "#fef2f2",
@@ -123,10 +137,18 @@ const preset = {
         // App rhythm tokens layered on the default scale.
         card: "1.25rem",
         section: "2.5rem",
+        // Poker-card face geometry (legacy: 2.25×4rem wide, 3.5×4rem tall).
+        // Centralized so PokerCard / CardReveal / decks stay pixel-consistent.
+        "poker-w": "9rem",
+        "poker-h": "14rem",
       },
       fontFamily: {
         // `display` reserved for the poker-card face (legacy used Cardo serif).
         display: ["Cardo", "ui-serif", "Georgia", "serif"],
+      },
+      fontSize: {
+        // Oversized numeral on the poker-card face (`text-card-face`).
+        "card-face": ["3.5rem", { lineHeight: "1" }],
       },
       transitionDuration: {
         fast: "150ms",
