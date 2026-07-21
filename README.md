@@ -47,25 +47,47 @@ consumed server-side only.
 ## Local development
 
 Requires **Node 22.13+** and **pnpm 11.15.1** (pinned via the root
-`packageManager` field). Postgres is needed for data + realtime — the quickest
-path is an ephemeral container.
+`packageManager` field) plus **Docker** (for the local Postgres). The fastest
+path is the one-command setup:
 
 ```bash
-# 1. install the whole workspace (also generates the Prisma client)
-pnpm install
-
-# 2. start a local Postgres (or point DATABASE_URL at your own)
-docker run -d --name sp-dev-pg -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=scrumpoker -p 5432:5432 postgres:16-alpine
-export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/scrumpoker
-
-# 3. apply migrations (schema + pg_notify triggers) and (optionally) seed
-pnpm --filter @scrum-poker/db run db:migrate
-pnpm --filter @scrum-poker/db run db:seed   # optional sample data
-
-# 4. run the app (http://localhost:3000)
-pnpm --filter @scrum-poker/web dev          # or: pnpm dev
+pnpm install     # install the workspace + generate the Prisma client
+pnpm db:setup    # create local env files, start Postgres, migrate + seed
+pnpm dev         # run the app at http://localhost:3000
 ```
+
+`pnpm db:setup` is idempotent and wires everything a fresh clone needs. To do it
+in a single step, `pnpm setup` runs `pnpm install && pnpm db:setup`; `pnpm dev:up`
+starts the database (if not already running) and then the dev server.
+
+### Database & dev scripts
+
+All of these are exposed at the repo root:
+
+| Script | What it does |
+| --- | --- |
+| `pnpm db:setup` | env bootstrap → `db:up` → `db:migrate` → `db:seed` (one-shot local setup) |
+| `pnpm db:up` | start the local Postgres (`docker compose up -d --wait db`) |
+| `pnpm db:down` | stop the local Postgres (keeps the data volume) |
+| `pnpm db:reset` | stop Postgres **and drop its data volume** (`docker compose down -v`) |
+| `pnpm db:migrate` | apply/create migrations (`prisma migrate dev`) + regenerate client |
+| `pnpm db:deploy` | apply committed migrations without prompts (`prisma migrate deploy`) |
+| `pnpm db:seed` | load sample data (a demo session + estimation + votes) |
+| `pnpm db:generate` | regenerate the Prisma client |
+| `pnpm db:studio` | open Prisma Studio |
+| `pnpm env:setup` | create local env files from the `.env.example` templates (idempotent) |
+| `pnpm dev` | run the Next.js dev server (`apps/web`) |
+| `pnpm dev:up` | `db:up` then `dev` |
+
+`pnpm env:setup` copies `apps/web/.env.example` → `apps/web/.env.local` and
+`packages/db/.env.example` → `packages/db/.env` (both gitignored) so
+`DATABASE_URL` is available to the Next.js dev server and the Prisma CLI. Existing
+files are never overwritten — edit them if your Postgres differs from the default
+(`postgres:postgres@localhost:5432/scrumpoker`, which matches `docker compose`).
+
+Prefer your own Postgres instead of Docker? Skip `db:up`, point `DATABASE_URL` at
+it (in `packages/db/.env` and `apps/web/.env.local`), then run `pnpm db:migrate`
+and `pnpm db:seed`.
 
 Workspace-wide scripts (delegate across every package, matching CI):
 
