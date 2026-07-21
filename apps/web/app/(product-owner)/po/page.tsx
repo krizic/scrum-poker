@@ -38,7 +38,7 @@ export default async function ProductOwnerPage({
   const session = sessionId ? await getSession(sessionId) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-section px-6 py-12 text-content">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-section px-6 py-12 text-content">
       <header className="flex flex-col items-center gap-2 text-center">
         <span className="rounded-full bg-brand/15 px-4 py-1 text-sm font-medium text-brand ring-1 ring-brand/40">
           Product Owner

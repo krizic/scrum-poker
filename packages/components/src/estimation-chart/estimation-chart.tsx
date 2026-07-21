@@ -74,7 +74,7 @@ export function EstimationChart({ votes, className }: EstimationChartProps) {
             itemsSpacing: 4,
             symbolSize: 14,
             symbolShape: "circle",
-            itemTextColor: "#64756c",
+            itemTextColor: "#586a60",
             effects: [{ on: "hover", style: { itemTextColor: "#0f1a15" } }],
           },
         ]}
