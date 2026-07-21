@@ -8,13 +8,16 @@
  *      it to localStorage (`lib/client/identity.ts`, ported `LocalUserInfoApi`).
  *      No identity ⇒ the create/join UI is gated behind sign-in (AC: "creating
  *      without an identity prompts for one first").
- *   2. Pick a role (Developer / Product Owner) — legacy kept these as separate
- *      pages; we keep the split and carry the choice into the route.
- *   3. Create a session (optional name + PIN) via the `createSessionAction`
- *      Server Action, OR join by PIN via `joinSessionAction`. On success we
- *      remember the session client-side (`lib/client/sessions.ts`, ported
- *      `LocalSessionApi`) and navigate to `sessionHref(role, id)` — i.e.
- *      `/dev?session=<id>` or `/po?session=<id>` (see `lib/session-route.ts`).
+ *   2. Pick a role (Developer / Product Owner) — the role scopes the action:
+ *      Product Owners CREATE a session; Developers JOIN one by PIN (they get
+ *      invited via the shared PIN). Legacy kept these as separate pages; we keep
+ *      the split and carry the choice into the route.
+ *   3. Product Owner: create a session (optional name + PIN) via the
+ *      `createSessionAction` Server Action. Developer: join by PIN via
+ *      `joinSessionAction`. On success we remember the session client-side
+ *      (`lib/client/sessions.ts`, ported `LocalSessionApi`) and navigate to
+ *      `sessionHref(role, id)` — i.e. `/dev?session=<id>` or `/po?session=<id>`
+ *      (see `lib/session-route.ts`).
  *   4. Join failures surface a user-facing error (Toast + inline `role="alert"`)
  *      and do NOT navigate.
  *
@@ -248,13 +251,17 @@ function StartFlow() {
         </p>
       ) : null}
 
-      <div className="grid gap-section md:grid-cols-2">
-        {/* Create session. */}
+      {/*
+        Role-scoped action. Only the Product Owner creates a session; Developers
+        join an existing one by PIN (they get invited via the shared PIN).
+      */}
+      {role === "po" ? (
         <Card>
           <CardHeader>
             <CardTitle>New session</CardTitle>
             <CardDescription>
-              Start a fresh round. Name and PIN are optional.
+              Start a fresh round as Product Owner. Name and PIN are optional —
+              share the PIN so developers can join.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -276,7 +283,7 @@ function StartFlow() {
                   id="create-pin"
                   name="session_pin"
                   inputMode="numeric"
-                  placeholder="Optional — share to let others join"
+                  placeholder="Optional — share to let developers join"
                   autoComplete="off"
                   value={createPin}
                   onChange={(e) => setCreatePin(e.target.value)}
@@ -284,18 +291,17 @@ function StartFlow() {
               </div>
               <Button type="submit" loading={pending} className="self-start">
                 <Plus aria-hidden="true" />
-                Create as {ROLE_LABEL[role]}
+                Create session
               </Button>
             </form>
           </CardContent>
         </Card>
-
-        {/* Join session by PIN. */}
+      ) : (
         <Card>
           <CardHeader>
             <CardTitle>Join session</CardTitle>
             <CardDescription>
-              Enter the PIN you were given to join an existing round.
+              Enter the PIN your Product Owner shared to join their round.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -322,12 +328,12 @@ function StartFlow() {
                 className="self-start"
               >
                 <LogIn aria-hidden="true" />
-                Join as {ROLE_LABEL[role]}
+                Join session
               </Button>
             </form>
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* Recent sessions (parity with legacy LocalSessionApi list). */}
       <section aria-labelledby="recent-heading" className="flex flex-col gap-3">
