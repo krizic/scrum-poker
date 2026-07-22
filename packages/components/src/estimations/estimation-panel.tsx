@@ -102,10 +102,7 @@ export function EstimationPanel({
             {revealed ? (
               <div className="flex flex-col gap-card">
                 <EstStatistics estimation={estimation} />
-                <EstimationChart
-                  votes={votes}
-                  className="h-96 sm:h-[28rem] xl:h-[32rem]"
-                />
+                <EstimationChart votes={votes} />
               </div>
             ) : null}
             <div className="flex flex-wrap justify-center gap-2">

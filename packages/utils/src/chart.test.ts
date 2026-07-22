@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Vote } from "@scrum-poker/types";
-import { NO_VOTE_ID, toPieChartData } from "./chart";
+import { NO_VOTE_ID, toPieChartData, toStackedBarChartData } from "./chart";
 
 function vote(value: Vote["value"], id = value ?? "none"): Vote {
   return {
@@ -36,5 +36,25 @@ describe("toPieChartData", () => {
   it("returns an empty array for no votes", () => {
     expect(toPieChartData([])).toEqual([]);
     expect(toPieChartData(undefined)).toEqual([]);
+  });
+});
+
+describe("toStackedBarChartData", () => {
+  it("builds a single indexed row with a key per value, ordered by count desc", () => {
+    const votes = [vote("5", "a"), vote("5", "b"), vote("8", "c"), vote("?", "d")];
+    expect(toStackedBarChartData(votes)).toEqual({
+      keys: ["5", "8", "?"],
+      data: [{ votes: "Votes", "5": 2, "8": 1, "?": 1 }],
+      total: 4,
+    });
+  });
+
+  it("returns empty keys/data and total 0 for no votes", () => {
+    expect(toStackedBarChartData([])).toEqual({ keys: [], data: [], total: 0 });
+    expect(toStackedBarChartData(undefined)).toEqual({
+      keys: [],
+      data: [],
+      total: 0,
+    });
   });
 });
