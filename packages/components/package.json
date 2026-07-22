@@ -21,7 +21,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@nivo/pie": "^0.99.0",
+    "@nivo/bar": "^0.99.0",
     "@scrum-poker/types": "workspace:*",
     "@scrum-poker/ui": "workspace:*",
     "@scrum-poker/utils": "workspace:*",

@@ -26,8 +26,8 @@
  *      `updateEstimationAction`.
  *   5. Import — `ImportZone` (react-dropzone) parses a CSV client-side and emits
  *      the rows → `importEstimationsAction` (bulk create).
- *   6. Share — the session id + PIN and a copyable `/dev?session=<id>` link so the
- *      PO can invite developers (the PO's coordination role).
+ *   6. Share — a compact "Copy invite link" button (and PIN, if set) in the
+ *      session header so the PO can invite developers (their coordination role).
  *
  * Styling is Tailwind tokens via `@scrum-poker/ui` / `@scrum-poker/components`
  * only — no inline styles / SCSS / Semantic UI.
@@ -105,10 +105,9 @@ function StreamStatus({
   );
 }
 
-/** Copyable developer invite link + session id / PIN — the PO's coordination surface. */
-function ShareCard({ session }: { session: Session }) {
+/** Compact "copy developer invite link" button for the session header. */
+function CopyInviteButton({ session }: { session: Session }) {
   const [copied, setCopied] = React.useState(false);
-
   const devHref = sessionHref("dev", session.id);
 
   const copy = React.useCallback(async () => {
@@ -126,60 +125,48 @@ function ShareCard({ session }: { session: Session }) {
   }, [devHref]);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-base">Invite developers</CardTitle>
-      </CardHeader>
-      <Separator />
-      <CardContent className="flex flex-col gap-4 pt-card">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <Label htmlFor="po-dev-link">Developer link</Label>
-            <Input
-              id="po-dev-link"
-              readOnly
-              value={devHref}
-              className="font-mono"
-              onFocus={(event) => event.currentTarget.select()}
-            />
-          </div>
-          <Button type="button" variant="outline" onClick={copy}>
-            {copied ? (
-              <Check aria-hidden="true" />
-            ) : (
-              <Copy aria-hidden="true" />
-            )}
-            {copied ? "Copied" : "Copy link"}
-          </Button>
-        </div>
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-          <div className="flex flex-col">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted">
-              Session id
-            </dt>
-            <dd className="font-mono text-content">{session.id}</dd>
-          </div>
-          <div className="flex flex-col">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted">
-              PIN
-            </dt>
-            <dd className="font-mono text-content">{session.pin || "—"}</dd>
-          </div>
-        </dl>
-      </CardContent>
-    </Card>
+    <Button type="button" variant="outline" size="sm" onClick={copy}>
+      {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+      {copied ? "Copied" : "Copy invite link"}
+    </Button>
   );
 }
 
 /** Create-estimation form (name + description) → `createEstimationAction`. */
-function CreateEstimationForm({
+/**
+ * AddEstimationDialog — a single "＋" entry point for adding rounds, with two
+ * tabs: manual entry (name + description → `createEstimationAction`) and CSV
+ * import (`ImportZone` → `importEstimationsAction`). Replaces the two separate
+ * always-visible cards, reclaiming vertical space on the PO workspace. Closes
+ * itself once a round is added or a CSV is imported.
+ */
+function AddEstimationDialog({
+  open,
+  onOpenChange,
   onCreate,
+  onImport,
+  onImportError,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onCreate: (input: { name: string; description: string }) => Promise<boolean>;
+  onImport: (rows: ImportedEstimation[]) => Promise<void>;
+  onImportError: (message: string) => void;
 }) {
+  const [tab, setTab] = React.useState<"manual" | "csv">("manual");
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+
+  // Reset to a clean manual tab each time the dialog opens.
+  React.useEffect(() => {
+    if (open) {
+      setTab("manual");
+      setName("");
+      setDescription("");
+      setSubmitting(false);
+    }
+  }, [open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -187,52 +174,110 @@ function CreateEstimationForm({
     setSubmitting(true);
     const ok = await onCreate({ name, description });
     setSubmitting(false);
-    if (ok) {
-      setName("");
-      setDescription("");
-    }
+    if (ok) onOpenChange(false);
   };
 
+  const handleImport = async (rows: ImportedEstimation[]) => {
+    await onImport(rows);
+    onOpenChange(false);
+  };
+
+  const tabButton = (id: "manual" | "csv", label: string) => (
+    <button
+      type="button"
+      role="tab"
+      id={`add-est-tab-${id}`}
+      aria-selected={tab === id}
+      aria-controls={`add-est-panel-${id}`}
+      onClick={() => setTab(id)}
+      className={cn(
+        "flex-1 rounded-button px-3 py-1.5 text-sm font-medium",
+        "transition-colors duration-fast ease-emphasized motion-reduce:transition-none",
+        "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+        tab === id
+          ? "bg-surface text-content shadow-card"
+          : "text-content-subtle hover:text-content",
+      )}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-base">Add an estimation</CardTitle>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-card">
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="po-est-name">Story name</Label>
-            <Input
-              id="po-est-name"
-              name="name"
-              required
-              placeholder="e.g. PROJ-123 — Login page"
-              value={name}
-              onChange={(event) => setName(event.currentTarget.value)}
-            />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add an estimation</DialogTitle>
+          <DialogDescription>
+            Add a single round manually, or import several from a CSV file.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div
+          role="tablist"
+          aria-label="Add estimation method"
+          className="flex gap-1 rounded-button bg-surface-muted p-1"
+        >
+          {tabButton("manual", "Add manually")}
+          {tabButton("csv", "Import from CSV")}
+        </div>
+
+        {tab === "manual" ? (
+          <form
+            id="add-est-panel-manual"
+            role="tabpanel"
+            aria-labelledby="add-est-tab-manual"
+            className="flex flex-col gap-3"
+            onSubmit={handleSubmit}
+          >
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="po-est-name">Story name</Label>
+              <Input
+                id="po-est-name"
+                name="name"
+                required
+                placeholder="e.g. PROJ-123 — Login page"
+                value={name}
+                onChange={(event) => setName(event.currentTarget.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="po-est-description">Description (optional)</Label>
+              <textarea
+                id="po-est-description"
+                name="description"
+                rows={3}
+                placeholder="Story description"
+                className={TEXTAREA_CLASS}
+                value={description}
+                onChange={(event) =>
+                  setDescription(event.currentTarget.value)
+                }
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={!name.trim() || submitting}>
+                <Plus aria-hidden="true" />
+                {submitting ? "Adding…" : "Add estimation"}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <div
+            id="add-est-panel-csv"
+            role="tabpanel"
+            aria-labelledby="add-est-tab-csv"
+          >
+            <ImportZone onImport={handleImport} onError={onImportError} />
           </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="po-est-description">Description (optional)</Label>
-            <textarea
-              id="po-est-description"
-              name="description"
-              rows={2}
-              placeholder="Story description"
-              className={TEXTAREA_CLASS}
-              value={description}
-              onChange={(event) => setDescription(event.currentTarget.value)}
-            />
-          </div>
-          <div>
-            <Button type="submit" disabled={!name.trim() || submitting}>
-              <Plus aria-hidden="true" />
-              {submitting ? "Adding…" : "Add estimation"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -333,6 +378,7 @@ function PoFlow({
       initialSession.estimations?.[0]?.id,
   );
   const [editingOpen, setEditingOpen] = React.useState(false);
+  const [addingOpen, setAddingOpen] = React.useState(false);
   const [announce, setAnnounce] = React.useState("");
 
   const estimations = session?.estimations ?? [];
@@ -480,7 +526,7 @@ function PoFlow({
 
   return (
     <div className="flex flex-col gap-section">
-      {/* Session header + live status. */}
+      {/* Session header + invite + live status — compact coordination bar. */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface-muted px-4 py-3">
         <div className="flex min-w-0 flex-col">
           <span className="text-xs font-medium uppercase tracking-wide text-muted">
@@ -490,27 +536,47 @@ function PoFlow({
             {sessionName}
           </span>
         </div>
-        <StreamStatus status={status} />
+        <div className="flex flex-wrap items-center gap-3">
+          {session.pin ? (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted">
+              <span className="text-xs font-medium uppercase tracking-wide">
+                PIN
+              </span>
+              <span className="font-mono text-content">{session.pin}</span>
+            </span>
+          ) : null}
+          <CopyInviteButton session={session} />
+          <StreamStatus status={status} />
+        </div>
       </div>
-
-      <ShareCard session={session} />
 
       {/* Estimation list + management panel (stats / chart / reveal) — the
           primary PO workspace, kept high on the page for quick access. */}
       <Card className="w-full">
         <CardHeader className="flex-row items-center justify-between gap-2">
           <CardTitle className="text-base">Estimations</CardTitle>
-          {selected ? (
+          <div className="flex items-center gap-1">
+            {selected ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingOpen(true)}
+              >
+                <Pencil aria-hidden="true" />
+                Edit
+              </Button>
+            ) : null}
             <Button
               type="button"
-              variant="ghost"
+              variant="primary"
               size="sm"
-              onClick={() => setEditingOpen(true)}
+              onClick={() => setAddingOpen(true)}
             >
-              <Pencil aria-hidden="true" />
-              Edit
+              <Plus aria-hidden="true" />
+              Add
             </Button>
-          ) : null}
+          </div>
         </CardHeader>
         <Separator />
         <CardContent className="pt-card">
@@ -525,24 +591,13 @@ function PoFlow({
         </CardContent>
       </Card>
 
-      {/* Secondary tools: add a round manually or import from CSV. */}
-      <div className="grid gap-card lg:grid-cols-2">
-        <CreateEstimationForm onCreate={handleCreate} />
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle className="text-base">Import from CSV</CardTitle>
-          </CardHeader>
-          <Separator />
-          <CardContent className="pt-card">
-            <ImportZone
-              onImport={handleImport}
-              onError={(message) =>
-                toastError("Couldn't read CSV", message)
-              }
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <AddEstimationDialog
+        open={addingOpen}
+        onOpenChange={setAddingOpen}
+        onCreate={handleCreate}
+        onImport={handleImport}
+        onImportError={(message) => toastError("Couldn't read CSV", message)}
+      />
 
       <EditEstimationDialog
         estimation={selected}

@@ -42,9 +42,9 @@ describe("DevEstimation", () => {
     expect(onVote).toHaveBeenCalledWith("5");
   });
 
-  it("locks the deck once the round is ended (isEnded): cards are not interactive", () => {
+  it("hides the whole panel once the round is ended (isEnded)", () => {
     const onVote = vi.fn();
-    render(
+    const { container } = render(
       <DevEstimation
         estimation={makeEstimation({ isActive: true, isEnded: true })}
         userInfo={userInfo}
@@ -52,12 +52,13 @@ describe("DevEstimation", () => {
       />,
     );
 
-    // No vote buttons are rendered when voting is closed.
+    // The entire voting panel is hidden; developers read the outcome from the
+    // separate "Results" roster the room renders below.
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByText(/now estimating/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /vote 5/i }),
     ).not.toBeInTheDocument();
-    // A closed-voting notice is shown instead of the "pick ?" hint.
-    expect(screen.getByText(/voting closed/i)).toBeInTheDocument();
     expect(onVote).not.toHaveBeenCalled();
   });
 });
