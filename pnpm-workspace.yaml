@@ -5,3 +5,5 @@ allowBuilds:
   git-stats: true
   leveldown: true
   sqlite3: true
+minimumReleaseAgeExclude:
+  - '@krizic/repo-context@0.1.1'

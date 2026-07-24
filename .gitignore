@@ -25,6 +25,9 @@ yarn-error.log*
 #couchDB
 .db/* 
 !.db/config.json
+packages/
+apps/
+.turbo/
 
 
 
