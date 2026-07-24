@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getPublicJoinUrl, parseNgrokTunnels } from "./ngrok";
+import { getNgrokTunnelUrl, parseNgrokTunnels } from "./ngrok";
 
 describe("parseNgrokTunnels — pure JSON parsing", () => {
   it("picks the https tunnel's public_url", () => {
@@ -33,12 +33,12 @@ describe("parseNgrokTunnels — pure JSON parsing", () => {
   });
 });
 
-describe("getPublicJoinUrl — fetches the ngrok API and builds the join link", () => {
+describe("getNgrokTunnelUrl — fetches the ngrok API for the current tunnel", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("returns the joined dev URL when the tunnel is up", async () => {
+  it("returns the https tunnel's public_url when the tunnel is up", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -49,18 +49,18 @@ describe("getPublicJoinUrl — fetches the ngrok API and builds the join link", 
       }),
     );
 
-    const result = await getPublicJoinUrl("session-1");
+    const result = await getNgrokTunnelUrl();
 
     expect(result).toEqual({
       ok: true,
-      url: "https://abc123.ngrok-free.app/dev?session=session-1",
+      publicUrl: "https://abc123.ngrok-free.app",
     });
   });
 
   it("reports unreachable when the ngrok API request fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
 
-    const result = await getPublicJoinUrl("session-1");
+    const result = await getNgrokTunnelUrl();
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -71,7 +71,7 @@ describe("getPublicJoinUrl — fetches the ngrok API and builds the join link", 
   it("reports unreachable when the ngrok API responds with a non-2xx status", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) }));
 
-    const result = await getPublicJoinUrl("session-1");
+    const result = await getNgrokTunnelUrl();
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

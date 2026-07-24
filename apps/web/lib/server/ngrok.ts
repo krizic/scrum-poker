@@ -1,18 +1,16 @@
 /**
- * ngrok tunnel resolution for the PO's "Public QR invite" header button.
+ * ngrok tunnel resolution for the PO's "Public QR invite" header button
+ * (`ngrok` mode — see `./public-join-url.ts` for the other mode and the
+ * mode-selection logic consumed by the Server Action).
  *
  * Turns the ngrok sidecar's local API response (`docker-compose.yml`'s
- * `ngrok` service, `http://ngrok:4040/api/tunnels`) into a public
- * developer-join URL. `parseNgrokTunnels` is pure (no I/O) so it's unit-tested
- * directly; `getPublicJoinUrl` wraps it with the actual `fetch` call and the
- * `sessionHref` join-link contract from `lib/session-route.ts` (the same
- * target the existing "Copy invite link" button uses, just with a public host
- * instead of `window.location.origin`).
+ * `ngrok` service, `http://ngrok:4040/api/tunnels`) into the current public
+ * tunnel URL. `parseNgrokTunnels` is pure (no I/O) so it's unit-tested
+ * directly; `getNgrokTunnelUrl` wraps it with the actual `fetch` call.
  */
-import { sessionHref } from "@/lib/session-route";
 
-export type PublicJoinUrlResult =
-  | { ok: true; url: string }
+export type NgrokTunnelUrlResult =
+  | { ok: true; publicUrl: string }
   | { ok: false; error: string };
 
 interface NgrokTunnel {
@@ -20,8 +18,8 @@ interface NgrokTunnel {
   public_url?: unknown;
 }
 
-const UNREACHABLE_ERROR =
-  "Public link unavailable — is the app running via `docker compose` with the ngrok tunnel (NGROK_AUTHTOKEN set)?";
+export const NGROK_UNREACHABLE_ERROR =
+  "Public link unavailable — is the app running via `docker compose` with the ngrok tunnel (NGROK_AUTHTOKEN set, `ngrok` profile enabled)?";
 const NOT_READY_ERROR = "Tunnel not ready yet — try again in a few seconds.";
 
 /**
@@ -55,30 +53,26 @@ export function parseNgrokTunnels(
 }
 
 /**
- * Resolve the public developer-join URL for `sessionId` via the ngrok
- * sidecar's local API. Returns a discriminated result instead of throwing so
- * the Server Action can hand it straight to the client for a toast/inline
- * error instead of a thrown-exception 500.
+ * Resolve the current public tunnel URL via the ngrok sidecar's local API.
+ * Returns a discriminated result instead of throwing so the caller can hand
+ * it straight to the client for an inline error instead of a thrown-exception
+ * 500.
  */
-export async function getPublicJoinUrl(sessionId: string): Promise<PublicJoinUrlResult> {
+export async function getNgrokTunnelUrl(): Promise<NgrokTunnelUrlResult> {
   const apiUrl = process.env.NGROK_API_URL || "http://ngrok:4040/api/tunnels";
 
   let body: unknown;
   try {
     const res = await fetch(apiUrl, { cache: "no-store" });
     if (!res.ok) {
-      return { ok: false, error: UNREACHABLE_ERROR };
+      return { ok: false, error: NGROK_UNREACHABLE_ERROR };
     }
     body = await res.json();
   } catch (err) {
-    console.error("getPublicJoinUrl: ngrok API unreachable", { apiUrl }, err);
-    return { ok: false, error: UNREACHABLE_ERROR };
+    console.error("getNgrokTunnelUrl: ngrok API unreachable", { apiUrl }, err);
+    return { ok: false, error: NGROK_UNREACHABLE_ERROR };
   }
 
-  const parsed = parseNgrokTunnels(body);
-  if (!parsed.ok) {
-    return parsed;
-  }
-
-  return { ok: true, url: `${parsed.publicUrl}${sessionHref("dev", sessionId)}` };
+  return parseNgrokTunnels(body);
 }
+

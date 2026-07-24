@@ -25,17 +25,17 @@
  * how to reflect success / surface errors (toast).
  */
 
+import { getPublicJoinUrl, type PublicJoinUrlResult } from "@/lib/server/public-join-url";
 import {
-  activateEstimation,
-  createEstimation,
-  deleteEstimation,
-  getSession,
-  importEstimations,
-  updateEstimation,
-  type CreateEstimationInput,
-  type UpdateEstimationInput,
+    activateEstimation,
+    createEstimation,
+    deleteEstimation,
+    getSession,
+    importEstimations,
+    updateEstimation,
+    type CreateEstimationInput,
+    type UpdateEstimationInput,
 } from "@/lib/server/services";
-import { getPublicJoinUrl, type PublicJoinUrlResult } from "@/lib/server/ngrok";
 import type { Estimation, Session } from "@scrum-poker/types";
 import type { ImportedEstimation } from "@scrum-poker/utils";
 
@@ -187,9 +187,9 @@ export async function getSessionAction(id: string): Promise<Session | null> {
 
 /**
  * Resolve the public developer-join URL for the "Public QR invite" feature
- * (PO session header) — proxies to the ngrok sidecar's local API. See
- * `lib/server/ngrok.ts` for the resolution logic; this is a thin wrapper
- * matching the other Server Actions in this file.
+ * (PO session header). See `lib/server/public-join-url.ts` for the mode
+ * selection (`PUBLIC_JOIN_URL_MODE=ngrok|local`) and resolution logic; this
+ * is a thin wrapper matching the other Server Actions in this file.
  */
 export async function getPublicJoinUrlAction(
   sessionId: string,

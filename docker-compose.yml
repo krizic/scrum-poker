@@ -1,10 +1,17 @@
 # docker-compose for local / self-hosted scrum-poker (issue #17).
 #
-# Brings up Postgres + the Next.js standalone server + an ngrok sidecar (for
-# the PO's "public QR invite" feature). On start, the web
+# Brings up Postgres + the Next.js standalone server. On start, the web
 # container applies Prisma migrations (RUN_MIGRATIONS=true) against the db
 # service, then serves on :3000. See ".env.example" for the variables; copy it
 # to ".env" and adjust as needed (compose auto-loads ".env").
+#
+# The PO's "Public QR invite" header button needs a public URL for developers
+# outside the local network — pick ONE via PUBLIC_JOIN_URL_MODE:
+#   - "local" (self-hosted behind a real domain): set PUBLIC_BASE_URL, no
+#     extra container needed.
+#   - "ngrok" (temporary local-dev tunnel, default): also set NGROK_AUTHTOKEN
+#     AND `COMPOSE_PROFILES=ngrok` in ".env" to actually start the `ngrok`
+#     sidecar below (it has `profiles: [ngrok]`, so it's skipped otherwise).
 #
 #   docker compose up --build        # build + run
 #   curl http://localhost:3000/api/health   -> {"status":"ok"}
@@ -48,6 +55,10 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:-}
       # Public (browser) — optional.
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      # Public QR invite (PO session header) — see the top comment above.
+      PUBLIC_JOIN_URL_MODE: ${PUBLIC_JOIN_URL_MODE:-ngrok}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      NGROK_API_URL: ${NGROK_API_URL:-http://ngrok:4040/api/tunnels}
     ports:
       - "3000:3000"
     healthcheck:
@@ -61,6 +72,10 @@ services:
 
   ngrok:
     image: ngrok/ngrok:latest
+    # Only started when the "ngrok" profile is active (set `COMPOSE_PROFILES=
+    # ngrok` in ".env" — Compose reads that var directly, no db/web change
+    # needed). Skip entirely when PUBLIC_JOIN_URL_MODE=local.
+    profiles: ["ngrok"]
     # NOTE: NGROK_AUTHTOKEN intentionally defaults to empty (not a required
     # `:?` var) so a blank token only fails *this* container, not the whole
     # `docker compose up` — db/web must keep working without ngrok configured.

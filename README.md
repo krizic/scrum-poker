@@ -142,18 +142,26 @@ docker compose down -v
 | `RUN_MIGRATIONS`         | web     | `true`             | Apply Prisma migrations on container start; set `false` to skip.   |
 | `SENTRY_DSN`             | web     | _(empty)_          | Server-side Sentry DSN (optional).                                 |
 | `NEXT_PUBLIC_SENTRY_DSN` | web     | _(empty)_          | Browser Sentry DSN (optional, public).                            |
-| `NGROK_AUTHTOKEN`        | ngrok   | _(empty)_          | Enables the PO's "Public QR invite" header button (get a free token at [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken)). Leave blank to skip; only the `ngrok` service is affected. |
+| `PUBLIC_JOIN_URL_MODE`   | web     | `ngrok`            | How the PO's "Public QR invite" button resolves a public URL: `ngrok` (temporary tunnel) or `local` (fixed domain, see `PUBLIC_BASE_URL`). |
+| `PUBLIC_BASE_URL`        | web     | _(empty)_          | Required when `PUBLIC_JOIN_URL_MODE=local` — the public origin this deployment is reachable at, e.g. `https://poker.example.com`. |
+| `NGROK_AUTHTOKEN`        | ngrok   | _(empty)_          | Required when `PUBLIC_JOIN_URL_MODE=ngrok` (get a free token at [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken)). |
 | `NGROK_API_URL`          | web     | `http://ngrok:4040/api/tunnels` | ngrok local API used to resolve the current public tunnel URL. |
+| `COMPOSE_PROFILES`       | —       | _(empty)_          | Set to `ngrok` to actually start the `ngrok` sidecar (it's behind a Compose profile, so it's skipped by default / when `PUBLIC_JOIN_URL_MODE=local`). |
 
 See `.env.example` for the full list. **Never commit real secrets.**
 
 ### Public QR invite (PO)
 
-On `/po`, the session header has a **Public QR invite** button. It opens a
-dialog with a QR code (and raw URL) that developers *outside* your local
-network can scan to join the session, via the always-on `ngrok` sidecar
-tunnel to the `web` container. Requires `NGROK_AUTHTOKEN` (see above) — without
-it, the button shows an inline error instead of a QR code.
+On `/po`, the session header has a **Public QR invite** button that opens a
+dialog with a QR code (and raw URL) developers *outside* your local network
+can scan to join the session. It supports two modes via `PUBLIC_JOIN_URL_MODE`:
+
+- **`local`** — for a real deployment behind a fixed domain. Set
+  `PUBLIC_BASE_URL` to that domain; no extra container is started.
+- **`ngrok`** (default) — for local-dev convenience via a temporary tunnel.
+  Requires `NGROK_AUTHTOKEN` **and** `COMPOSE_PROFILES=ngrok` (the `ngrok`
+  service is behind a Compose profile and is skipped otherwise) — without
+  both, the button shows an inline error instead of a QR code.
 
 ### Healthcheck
 
