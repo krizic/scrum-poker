@@ -142,8 +142,18 @@ docker compose down -v
 | `RUN_MIGRATIONS`         | web     | `true`             | Apply Prisma migrations on container start; set `false` to skip.   |
 | `SENTRY_DSN`             | web     | _(empty)_          | Server-side Sentry DSN (optional).                                 |
 | `NEXT_PUBLIC_SENTRY_DSN` | web     | _(empty)_          | Browser Sentry DSN (optional, public).                            |
+| `NGROK_AUTHTOKEN`        | ngrok   | _(empty)_          | Enables the PO's "Public QR invite" header button (get a free token at [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken)). Leave blank to skip; only the `ngrok` service is affected. |
+| `NGROK_API_URL`          | web     | `http://ngrok:4040/api/tunnels` | ngrok local API used to resolve the current public tunnel URL. |
 
 See `.env.example` for the full list. **Never commit real secrets.**
+
+### Public QR invite (PO)
+
+On `/po`, the session header has a **Public QR invite** button. It opens a
+dialog with a QR code (and raw URL) that developers *outside* your local
+network can scan to join the session, via the always-on `ngrok` sidecar
+tunnel to the `web` container. Requires `NGROK_AUTHTOKEN` (see above) — without
+it, the button shows an inline error instead of a QR code.
 
 ### Healthcheck
 

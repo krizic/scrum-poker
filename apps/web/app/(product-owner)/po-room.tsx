@@ -33,42 +33,55 @@
  * only — no inline styles / SCSS / Semantic UI.
  */
 
-import * as React from "react";
-import Link from "next/link";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-  Input,
-  Label,
-  Separator,
-  Toaster,
-  useToast,
-  cn,
-} from "@scrum-poker/ui";
 import { Estimations, ImportZone } from "@scrum-poker/components";
 import type { Estimation, Session } from "@scrum-poker/types";
-import type { ImportedEstimation } from "@scrum-poker/utils";
-import { Check, Copy, Pencil, Plus, Wifi, WifiOff } from "lucide-react";
-
-import { sessionHref } from "@/lib/session-route";
-import { useSessionStream } from "@/lib/client/use-session-stream";
 import {
-  activateEstimationAction,
-  createEstimationAction,
-  deleteEstimationAction,
-  getSessionAction,
-  importEstimationsAction,
-  updateEstimationAction,
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    cn,
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    Input,
+    Label,
+    Separator,
+    Spinner,
+    Toaster,
+    useToast,
+} from "@scrum-poker/ui";
+import type { ImportedEstimation } from "@scrum-poker/utils";
+import {
+    Check,
+    Copy,
+    Pencil,
+    Plus,
+    QrCode,
+    TriangleAlert,
+    Wifi,
+    WifiOff,
+} from "lucide-react";
+import Link from "next/link";
+import * as React from "react";
+import QRCode from "react-qr-code";
+
+import { useSessionStream } from "@/lib/client/use-session-stream";
+import { sessionHref } from "@/lib/session-route";
+import {
+    activateEstimationAction,
+    createEstimationAction,
+    deleteEstimationAction,
+    getPublicJoinUrlAction,
+    getSessionAction,
+    importEstimationsAction,
+    updateEstimationAction,
 } from "./actions";
 
 /** Shared textarea styling — mirrors the `ui` `Input` tokens (no `Textarea` primitive yet). */
@@ -128,6 +141,130 @@ function CopyInviteButton({ session }: { session: Session }) {
     <Button type="button" variant="outline" size="sm" onClick={copy}>
       {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
       {copied ? "Copied" : "Copy invite link"}
+    </Button>
+  );
+}
+
+/**
+ * "Public QR invite" button + dialog for the session header. Resolves a
+ * temporary public developer-join URL via the ngrok sidecar (see
+ * `getPublicJoinUrlAction` / `lib/server/ngrok.ts`) and renders it as a QR
+ * code developers outside the local network can scan to join. Exported (not
+ * module-private like `CopyInviteButton`) so it's unit-testable in isolation
+ * without mounting the full `PoFlow` + SSE session stream.
+ */
+type QrInviteState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; url: string }
+  | { status: "error"; error: string };
+
+export function QrInviteButton({ session }: { session: Session }) {
+  const [open, setOpen] = React.useState(false);
+  const [state, setState] = React.useState<QrInviteState>({ status: "idle" });
+  const [pending, startTransition] = React.useTransition();
+
+  const load = React.useCallback(() => {
+    setState({ status: "loading" });
+    startTransition(async () => {
+      const result = await getPublicJoinUrlAction(session.id);
+      setState(
+        result.ok
+          ? { status: "success", url: result.url }
+          : { status: "error", error: result.error },
+      );
+    });
+  }, [session.id]);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) load();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" size="sm">
+          <QrCode aria-hidden="true" />
+          Public QR invite
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Scan to join from anywhere</DialogTitle>
+          <DialogDescription>
+            Developers outside your local network can scan this code to join
+            &ldquo;{session.name || "this session"}&rdquo; via a temporary
+            public link.
+          </DialogDescription>
+        </DialogHeader>
+
+        {state.status === "idle" || state.status === "loading" ? (
+          <div className="flex flex-col items-center gap-2 py-6">
+            <Spinner label="Generating public link…" />
+            <span className="text-sm text-muted">Generating public link…</span>
+          </div>
+        ) : state.status === "error" ? (
+          <div className="flex flex-col gap-3 py-2">
+            <p className="flex items-center gap-2 rounded-card border border-warning-300/60 bg-warning-50 px-4 py-3 text-sm font-medium text-warning-800">
+              <TriangleAlert aria-hidden="true" className="size-4 shrink-0" />
+              {state.error}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={load}
+              disabled={pending}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="rounded-card border border-border bg-white p-3">
+              <QRCode value={state.url} size={192} />
+            </div>
+            {!session.pin ? (
+              <p className="flex items-center gap-2 rounded-card border border-warning-300/60 bg-warning-50 px-3 py-2 text-xs font-medium text-warning-800">
+                <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
+                This session has no PIN — anyone with this link can join.
+              </p>
+            ) : null}
+            <div className="flex w-full items-center gap-2">
+              <Input
+                readOnly
+                value={state.url}
+                onFocus={(event) => event.currentTarget.select()}
+                aria-label="Public join link"
+              />
+              <QrCopyButton url={state.url} />
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Compact "copy this public URL" button — mirrors `CopyInviteButton`'s pattern. */
+function QrCopyButton({ url }: { url: string }) {
+  const [copied, setCopied] = React.useState(false);
+
+  const copy = React.useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("copy public invite link failed", err);
+    }
+  }, [url]);
+
+  return (
+    <Button type="button" variant="outline" size="sm" onClick={copy}>
+      {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+      <span className="sr-only">Copy public link</span>
     </Button>
   );
 }
@@ -546,6 +683,7 @@ function PoFlow({
             </span>
           ) : null}
           <CopyInviteButton session={session} />
+          <QrInviteButton session={session} />
           <StreamStatus status={status} />
         </div>
       </div>

@@ -15,8 +15,20 @@ import { defineConfig } from "vitest/config";
  * while everything else (the DB-touching `test/**` and pure `lib/**` tests)
  * keeps the default `node` environment. `@scrum-poker/config/vitest-setup`
  * registers the shared `@testing-library/jest-dom` matchers.
+ *
+ * This app's `tsconfig.json` sets `"jsx": "preserve"` (Next.js's own SWC
+ * compiler does the real transform at build time), but esbuild (which Vitest
+ * uses to transform test files) reads that same tsconfig and falls back to
+ * the classic `React.createElement` transform for it — which throws
+ * `ReferenceError: React is not defined` in any `.tsx` test that doesn't
+ * explicitly `import React`. Forcing the automatic runtime here keeps `.tsx`
+ * tests consistent with the rest of the monorepo (every other package's
+ * tsconfig already sets `"jsx": "react-jsx"`).
  */
 export default defineConfig({
+  esbuild: {
+    jsx: "automatic",
+  },
   test: {
     include: ["lib/**/*.test.ts", "test/**/*.test.ts", "app/**/*.test.tsx"],
     environment: "node",
