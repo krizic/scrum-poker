@@ -1,0 +1,52 @@
+{
+  "name": "@scrum-poker/components",
+  "version": "0.0.0",
+  "private": true,
+  "description": "App-specific composed components for scrum-poker (PokerCard, CardReveal, VotesTable, EstimationChart, EstStatistics, Estimations, DevEstimation, ImportZone, DevSignIn). Built by composing @scrum-poker/ui primitives, styled exclusively with Tailwind utilities referencing the centralized @scrum-poker/config tokens. All vote-math/CSV/formatting comes from @scrum-poker/utils. Data-in / callbacks-out only — no DB/service/SSE access.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./tailwind": "./tailwind.config.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nivo/bar": "^0.99.0",
+    "@scrum-poker/types": "workspace:*",
+    "@scrum-poker/ui": "workspace:*",
+    "@scrum-poker/utils": "workspace:*",
+    "lucide-react": "^0.474.0",
+    "react-dropzone": "^14.3.8"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@scrum-poker/config": "workspace:*",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.13.0",
+    "jsdom": "^25.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.10.0",
+    "vitest": "^2.1.0"
+  }
+}

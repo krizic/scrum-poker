@@ -1,0 +1,53 @@
+// Prisma 7 schema for scrum-poker (@scrum-poker/db).
+//
+// Source of truth: docs/superpowers/specs/2026-07-21-nextjs-migration-design.md
+// ("Data model (Prisma / Postgres)"). Models are reproduced verbatim from the
+// spec. The pg_notify triggers that feed the SSE layer live in a dedicated raw
+// SQL migration (see prisma/migrations/*_pg_notify_triggers), not here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Session {
+  id          String       @id @default(uuid())
+  name        String?
+  pin         String?
+  createdAt   DateTime     @default(now())
+  lastUpdated DateTime     @updatedAt
+  estimations Estimation[]
+}
+
+model Estimation {
+  id          String   @id @default(uuid())
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String
+  name        String
+  description String?
+  isActive    Boolean  @default(false)
+  isEnded     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  votes       Vote[]
+
+  @@index([sessionId])
+}
+
+model Vote {
+  id           String     @id @default(uuid())
+  estimation   Estimation @relation(fields: [estimationId], references: [id], onDelete: Cascade)
+  estimationId String
+  voterId      String // client-generated identity id
+  voterName    String
+  voterEmail   String
+  pattern      String
+  value        String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([estimationId, voterId]) // one vote per user per estimation
+  @@index([estimationId])
+}

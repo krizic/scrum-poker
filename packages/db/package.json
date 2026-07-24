@@ -1,0 +1,45 @@
+{
+  "name": "@scrum-poker/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Prisma 7 + Postgres data layer for scrum-poker. The only package importing @prisma/client: schema, migrations (incl. pg_notify triggers), seed, client singleton, and row → @scrum-poker/types mappers.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "build": "prisma generate && tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo \"@scrum-poker/db: no tests yet\""
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
+    "@scrum-poker/types": "workspace:*",
+    "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@scrum-poker/config": "workspace:*",
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.11.0",
+    "dotenv": "^16.4.0",
+    "eslint": "^9.13.0",
+    "prisma": "^7.9.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.10.0"
+  }
+}

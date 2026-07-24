@@ -1,0 +1,8 @@
+/* Tailwind CSS v4 entrypoint.
+ *
+ * `@import "tailwindcss"` pulls in Preflight + utilities. `@config` loads the
+ * legacy JS config (tailwind.config.mjs) which registers the shared preset from
+ * @scrum-poker/config, so theme tokens stay centralized. Path is relative to
+ * this CSS file. */
+@import "tailwindcss";
+@config "../tailwind.config.mjs";

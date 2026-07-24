@@ -1,9 +1,36 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Dedupe React typings to a single v19 across the workspace. Without this,
+# transitive deps (e.g. Prisma Studio) can pull in @types/react@18, which
+# collides with the Next 16 / React 19 packages when apps/web type-checks the
+# transpiled @scrum-poker/components sources ("ForwardRefExoticComponent cannot
+# be used as a JSX component").
+overrides:
+  '@types/react': '19.2.17'
+  '@types/react-dom': '19.2.3'
+
+# pnpm's approved native build allowlist for the new stack (Next.js 16 +
+# Prisma 7 + Sentry + Vitest). Legacy CRA/PouchDB build deps (core-js,
+# git-stats, leveldown, sqlite3) were removed in the cutover (#19).
 allowBuilds:
   '@parcel/watcher': true
-  core-js: true
-  core-js-pure: true
-  git-stats: true
-  leveldown: true
-  sqlite3: true
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@sentry/cli': true
+  esbuild: true
+  prisma: true
+  sharp: true
+
 minimumReleaseAgeExclude:
-  - '@krizic/repo-context@0.1.1'
+  - '@next/env@16.2.11'
+  - '@next/swc-darwin-arm64@16.2.11'
+  - '@next/swc-darwin-x64@16.2.11'
+  - '@next/swc-linux-arm64-gnu@16.2.11'
+  - '@next/swc-linux-arm64-musl@16.2.11'
+  - '@next/swc-linux-x64-gnu@16.2.11'
+  - '@next/swc-linux-x64-musl@16.2.11'
+  - '@next/swc-win32-arm64-msvc@16.2.11'
+  - '@next/swc-win32-x64-msvc@16.2.11'
+  - next@16.2.11

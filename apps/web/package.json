@@ -1,0 +1,51 @@
+{
+  "name": "@scrum-poker/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js 16 (App Router) shell for scrum-poker. Server Components by default, Tailwind wired to @scrum-poker/config's shared preset, Sentry (Next SDK) for client + server, standalone output for Docker. Thin scaffolding only — real routes/UI/services land in later issues.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@scrum-poker/components": "workspace:*",
+    "@scrum-poker/db": "workspace:*",
+    "@scrum-poker/types": "workspace:*",
+    "@scrum-poker/ui": "workspace:*",
+    "@scrum-poker/utils": "workspace:*",
+    "@sentry/nextjs": "^10.67.0",
+    "lucide-react": "^0.474.0",
+    "next": "^16.2.11",
+    "pg": "^8.22.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-qr-code": "^2.2.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@scrum-poker/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.10.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.11.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.13.0",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.10.0",
+    "vitest": "^2.1.0"
+  }
+}

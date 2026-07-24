@@ -1,18 +1,24 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/https://github.com/krizic/scrum-poker/pull/21/conflict?name=package.json&ancestor_oid=8cc0b7c2e0541452f7c08e9c43c19e9ab56a9b60&base_oid=6658969a9add95a8eefe2697da367470e23f1a5a&head_oid=73bdc97eb388e0a945690ccb29ad7f4825502b30
 /.pnp
 .pnp.js
+
+# monorepo tooling
+.turbo/
+**/dist/
+
+# lockfiles from other package managers (this repo standardizes on pnpm)
+package-lock.json
+yarn.lock
 
 # testing
 /coverage
 
-# production
-/build
-
 # misc
 .DS_Store
+.env
 .env.local
 .env.development.local
 .env.test.local
@@ -21,13 +27,4 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-#couchDB
-.db/* 
-!.db/config.json
-packages/
-apps/
-.turbo/
-
-
-
+.db/
