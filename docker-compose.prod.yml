@@ -1,0 +1,64 @@
+# Production overlay for the poker.vkrizic.com deployment.
+#
+# Combines with the base docker-compose.yml on the deploy server:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from the base (dev) compose:
+#   - `web` runs the prebuilt image pushed to GHCR by
+#     .github/workflows/deploy.yml instead of building locally — the server
+#     only needs these two compose files + Caddyfile.prod + .env, not the
+#     whole source tree.
+#   - `db` and `web` no longer publish ports to the host. Only Caddy is
+#     reachable from outside; everything else talks over the compose network.
+#   - No ngrok: PUBLIC_JOIN_URL_MODE=local + PUBLIC_BASE_URL point at the real
+#     poker.vkrizic.com domain Caddy terminates TLS for (the `ngrok` service
+#     in the base file stays inert — it only starts under the "ngrok"
+#     COMPOSE_PROFILES, which this deployment never sets).
+#   - Adds the `caddy` reverse proxy: obtains/renews a Let's Encrypt cert for
+#     ROOT_DOMAIN/WWW_DOMAIN (redirected to the app) and POKER_DOMAIN
+#     (reverse-proxied to `web:3000`).
+#
+# NOTE: this server also hosts other, independently deployed projects (each
+# with its own Caddy container — see /opt/agency-deploy and /opt/hland), all
+# binding :80/:443. Only one stack's Caddy can be up at a time on this host;
+# `docker compose down` the other stack first if you need to bring this one up.
+
+services:
+  web:
+    build: !reset null
+    image: ${WEB_IMAGE:-ghcr.io/krizic/scrum-poker-web:latest}
+    ports: !reset []
+    environment:
+      PUBLIC_JOIN_URL_MODE: local
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://poker.vkrizic.com}
+
+  db:
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@vkrizic.com}
+      ROOT_DOMAIN: ${ROOT_DOMAIN:-vkrizic.com}
+      WWW_DOMAIN: ${WWW_DOMAIN:-www.vkrizic.com}
+      POKER_DOMAIN: ${POKER_DOMAIN:-poker.vkrizic.com}
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  caddy-data:
+  caddy-config:

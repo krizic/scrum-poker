@@ -1,0 +1,159 @@
+# =============================================================================
+# Deploy scrum-poker to production (poker.vkrizic.com)
+#
+# 1. Waits for the "CI" workflow to succeed on master (never deploys a red
+#    build — see the `workflow_run` trigger below).
+# 2. Builds the production Docker image (Dockerfile) and pushes it to GHCR,
+#    tagged `latest` + the commit SHA.
+# 3. SSHes into the VPS, refreshes the deploy directory's compose files +
+#    Caddyfile, pulls the new image, and restarts the `web` service (+ caddy)
+#    via `docker compose up -d`.
+#
+# The VPS runs docker-compose.yml + docker-compose.prod.yml (Caddy + Postgres +
+# the app). See docker-compose.prod.yml for the production-only overrides.
+#
+# Required GitHub Secrets & Variables:
+#   Secrets:
+#     SSH_PRIVATE_KEY  — private key for the deploy user on the VPS
+#   Variables:
+#     DEPLOY_HOST      — VPS hostname or IP
+#     DEPLOY_USER      — SSH user on the VPS
+#     DEPLOY_PATH      — absolute path to the deploy directory (e.g. /opt/scrum-poker)
+# =============================================================================
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    # Only deploy master, and only when triggered manually OR the CI run that
+    # just completed was for master and actually succeeded.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.head_branch == 'master' &&
+       github.event.workflow_run.conclusion == 'success')
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      sha: ${{ steps.meta.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          echo "image=ghcr.io/${{ github.repository_owner }}/scrum-poker-web" >> "$GITHUB_OUTPUT"
+          echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:latest
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Restart production
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build-and-push.outputs.sha }}
+
+      - name: Deploy to VPS
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          WEB_IMAGE: ${{ needs.build-and-push.outputs.image }}:${{ needs.build-and-push.outputs.sha }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new ${DEPLOY_USER}@${DEPLOY_HOST}"
+
+          # Refresh the compose files + Caddyfile in place — this repo is the
+          # single source of truth for prod config; the server never edits
+          # its own copies.
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            docker-compose.yml docker-compose.prod.yml Caddyfile.prod \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+
+          # Pin `web` to the just-built SHA tag (not `latest`) so this deploy
+          # is reproducible even if a later push overwrites `latest` before
+          # this run finishes. docker-compose.prod.yml's WEB_IMAGE default
+          # falls back to `latest` for manual `docker compose up` on the box.
+          $SSH bash -s -- "${DEPLOY_PATH}" "${WEB_IMAGE}" <<'REMOTE'
+          set -euo pipefail
+          DP="$1"
+          IMG="$2"
+          cd "$DP"
+
+          # Persist the pinned image tag so a manual `docker compose up` later
+          # (e.g. after a host reboot) restarts the same version, not whatever
+          # `latest` happens to point to by then.
+          if grep -q '^WEB_IMAGE=' .env 2>/dev/null; then
+            sed -i "s|^WEB_IMAGE=.*|WEB_IMAGE=${IMG}|" .env
+          else
+            echo "WEB_IMAGE=${IMG}" >> .env
+          fi
+
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml pull web
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+
+          # Wait for the new web container to report healthy before declaring
+          # success, so a broken image fails the workflow instead of silently
+          # leaving the old container running behind Caddy.
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' scrum-poker-web-1 2>/dev/null || echo "starting")
+            if [ "$status" = "healthy" ]; then
+              echo "web is healthy"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "::error::web did not become healthy in time"
+              docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail=100 web
+              exit 1
+            fi
+            sleep 2
+          done
+
+          # Drop dangling images from previous deploys.
+          docker image prune -f
+          echo "Deploy complete: ${IMG}"
+          REMOTE

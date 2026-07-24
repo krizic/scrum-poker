@@ -1,0 +1,32 @@
+# =============================================================================
+# Caddy reverse proxy — production (poker.vkrizic.com)
+#
+# Terminates TLS (Let's Encrypt, auto-renewed via the ACME_EMAIL account) for:
+#   ROOT_DOMAIN / WWW_DOMAIN (vkrizic.com, www.vkrizic.com) — permanently
+#     redirected to POKER_DOMAIN; this host doesn't serve separate content yet.
+#   POKER_DOMAIN (poker.vkrizic.com) — reverse-proxied to the `web` service
+#     (Next.js standalone server, port 3000) from docker-compose.yml +
+#     docker-compose.prod.yml.
+#
+# Domains are driven by environment variables (see docker-compose.prod.yml /
+# the server's .env) so this file never needs to change if a domain moves.
+# =============================================================================
+
+{
+	email {$ACME_EMAIL}
+}
+
+# ---- Root domain: redirect to the poker app --------------------------------
+{$ROOT_DOMAIN} {
+	redir https://{$POKER_DOMAIN}{uri} permanent
+}
+
+{$WWW_DOMAIN} {
+	redir https://{$POKER_DOMAIN}{uri} permanent
+}
+
+# ---- Scrum Poker app --------------------------------------------------------
+{$POKER_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
