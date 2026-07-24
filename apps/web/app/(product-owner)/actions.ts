@@ -35,6 +35,7 @@ import {
   type CreateEstimationInput,
   type UpdateEstimationInput,
 } from "@/lib/server/services";
+import { getPublicJoinUrl, type PublicJoinUrlResult } from "@/lib/server/ngrok";
 import type { Estimation, Session } from "@scrum-poker/types";
 import type { ImportedEstimation } from "@scrum-poker/utils";
 
@@ -182,4 +183,16 @@ export async function importEstimationsAction(
  */
 export async function getSessionAction(id: string): Promise<Session | null> {
   return getSession(id);
+}
+
+/**
+ * Resolve the public developer-join URL for the "Public QR invite" feature
+ * (PO session header) — proxies to the ngrok sidecar's local API. See
+ * `lib/server/ngrok.ts` for the resolution logic; this is a thin wrapper
+ * matching the other Server Actions in this file.
+ */
+export async function getPublicJoinUrlAction(
+  sessionId: string,
+): Promise<PublicJoinUrlResult> {
+  return getPublicJoinUrl(sessionId);
 }
