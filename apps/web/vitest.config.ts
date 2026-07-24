@@ -9,10 +9,20 @@ import { defineConfig } from "vitest/config";
  * throws when imported outside a React Server Components graph, so under Vitest
  * (plain Node) we alias it to a harmless no-op stub. This lets the DB-invariant
  * and pure-mapping tests import the real service modules unchanged.
+ *
+ * `app/**\/*.test.tsx` component tests (e.g. `po-room`'s `QrInviteButton`) need a
+ * browser-like DOM, so those files run under `jsdom` via `environmentMatchGlobs`
+ * while everything else (the DB-touching `test/**` and pure `lib/**` tests)
+ * keeps the default `node` environment. `@scrum-poker/config/vitest-setup`
+ * registers the shared `@testing-library/jest-dom` matchers.
  */
 export default defineConfig({
   test: {
-    include: ["lib/**/*.test.ts", "test/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "test/**/*.test.ts", "app/**/*.test.tsx"],
+    environment: "node",
+    environmentMatchGlobs: [["app/**/*.test.tsx", "jsdom"]],
+    globals: true,
+    setupFiles: ["@scrum-poker/config/vitest-setup"],
     alias: {
       "server-only": fileURLToPath(
         new URL("./test/stubs/server-only.ts", import.meta.url),
